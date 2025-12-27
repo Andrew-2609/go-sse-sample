@@ -1,0 +1,14 @@
+@baseUrl = http://localhost:8089/metrics/readings
+
+### Create Metric Reading
+# @prompt metricId
+# @prompt value
+# @prompt timestamp
+POST {{baseUrl}}
+Content-Type: application/json
+
+{
+    "metric_id": "{{metricId}}",
+    "value": {{value}},
+    "timestamp": "{{timestamp}}"
+}

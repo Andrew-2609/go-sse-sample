@@ -1,0 +1,13 @@
+@baseUrl = http://localhost:8089
+
+### Create Metric
+POST {{baseUrl}}/metrics
+Content-Type: application/json
+
+{
+    "name": "Test Metric"
+}
+
+### Get Metric by ID
+# @prompt metricId
+GET {{baseUrl}}/metrics/{{metricId}}
