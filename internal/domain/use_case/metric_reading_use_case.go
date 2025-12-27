@@ -21,7 +21,12 @@ func NewMetricReadingUseCase(metricRepository entity.MetricRepository, metricRea
 }
 
 func (u *MetricReadingUseCase) CreateMetricReading(metricReadingDTO dto.CreateMetricReadingRequestDTO) (dto.CreateMetricReadingResponseDTO, error) {
-	metric, err := u.metricRepository.GetMetricByID(metricReadingDTO.MetricID)
+	metricID, err := uuid.Parse(metricReadingDTO.MetricID)
+	if err != nil {
+		return dto.CreateMetricReadingResponseDTO{}, err
+	}
+
+	metric, err := u.metricRepository.GetMetricByID(metricID)
 
 	if err != nil {
 		return dto.CreateMetricReadingResponseDTO{}, err

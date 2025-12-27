@@ -39,7 +39,7 @@ func (u *MetricUseCase) CreateMetric(metricDTO dto.CreateMetricRequestDTO) (dto.
 }
 
 func (u *MetricUseCase) GetMetricByID(id uuid.UUID) (dto.GetMetricByIDResponseDTO, error) {
-	metric, err := u.metricRepository.GetMetricByID(id.String())
+	metric, err := u.metricRepository.GetMetricByID(id)
 
 	if err != nil {
 		return dto.GetMetricByIDResponseDTO{}, err
