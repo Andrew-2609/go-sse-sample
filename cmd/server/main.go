@@ -11,6 +11,7 @@ import (
 	"github.com/Andrew-2609/go-sse-sample/internal/domain/use_case"
 	"github.com/Andrew-2609/go-sse-sample/internal/presentation/controller"
 	"github.com/Andrew-2609/go-sse-sample/internal/repository"
+	"github.com/Andrew-2609/go-sse-sample/pkg/sse"
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,7 +40,7 @@ func main() {
 	stop()
 	log.Println("shutting down gracefully, press Ctrl+C again to force")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
@@ -59,9 +60,11 @@ func setupRoutes(router *gin.Engine) {
 }
 
 func makeControllers() (*controller.MetricController, *controller.MetricReadingController) {
+	sseHub := sse.NewSSEHub()
+
 	metricRepository := repository.NewMetricInMemoryRepository()
-	metricUseCase := use_case.NewMetricUseCase(metricRepository)
-	metricController := controller.NewMetricController(metricUseCase)
+	metricUseCase := use_case.NewMetricUseCase(metricRepository, sseHub)
+	metricController := controller.NewMetricController(metricUseCase, sseHub)
 
 	metricReadingRepository := repository.NewMetricReadingInMemoryRepository()
 	metricReadingUseCase := use_case.NewMetricReadingUseCase(metricRepository, metricReadingRepository)

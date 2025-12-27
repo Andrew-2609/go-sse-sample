@@ -2,17 +2,21 @@ package use_case
 
 import (
 	"github.com/Andrew-2609/go-sse-sample/internal/domain/entity"
+	"github.com/Andrew-2609/go-sse-sample/internal/domain/enum"
 	"github.com/Andrew-2609/go-sse-sample/internal/presentation/dto"
+	"github.com/Andrew-2609/go-sse-sample/pkg/sse"
 	"github.com/google/uuid"
 )
 
 type MetricUseCase struct {
 	metricRepository entity.MetricRepository
+	sseHub           *sse.SSEHub
 }
 
-func NewMetricUseCase(metricRepository entity.MetricRepository) *MetricUseCase {
+func NewMetricUseCase(metricRepository entity.MetricRepository, sseHub *sse.SSEHub) *MetricUseCase {
 	return &MetricUseCase{
 		metricRepository: metricRepository,
+		sseHub:           sseHub,
 	}
 }
 
@@ -35,7 +39,14 @@ func (u *MetricUseCase) CreateMetric(metricDTO dto.CreateMetricRequestDTO) (dto.
 		return dto.CreateMetricResponseDTO{}, err
 	}
 
-	return dto.NewCreateMetricResponseDTO(createdMetric), nil
+	response := dto.NewCreateMetricResponseDTO(createdMetric)
+
+	u.sseHub.Broadcast <- sse.Event{
+		Type: enum.EventTypeMetricCreated,
+		Data: response,
+	}
+
+	return response, nil
 }
 
 func (u *MetricUseCase) GetMetricByID(id uuid.UUID) (dto.GetMetricByIDResponseDTO, error) {
