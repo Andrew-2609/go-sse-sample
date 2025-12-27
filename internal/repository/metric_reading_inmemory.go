@@ -16,7 +16,7 @@ func NewMetricReadingInMemoryRepository() *MetricReadingInMemoryRepository {
 	}
 }
 
-func (r *MetricReadingInMemoryRepository) CreateMetricReading(metricReading entity.MetricReading) error {
-	r.metricReadings[metricReading.ID] = metricReading
-	return nil
+func (r *MetricReadingInMemoryRepository) CreateMetricReading(metricReading entity.MetricReading) (entity.MetricReading, error) {
+	r.metricReadings[metricReading.ID.String()] = metricReading
+	return metricReading, nil
 }

@@ -43,6 +43,5 @@ func (m *Metric) validate() error {
 
 type MetricRepository interface {
 	CreateMetric(metric Metric) (Metric, error)
-	MetricExistsById(id string) (bool, error)
 	GetMetricByID(id string) (Metric, error)
 }

@@ -1,9 +1,11 @@
 package use_case
 
 import (
-	"fmt"
+	"time"
 
 	"github.com/Andrew-2609/go-sse-sample/internal/domain/entity"
+	"github.com/Andrew-2609/go-sse-sample/internal/presentation/dto"
+	"github.com/google/uuid"
 )
 
 type MetricReadingUseCase struct {
@@ -18,16 +20,36 @@ func NewMetricReadingUseCase(metricRepository entity.MetricRepository, metricRea
 	}
 }
 
-func (u *MetricReadingUseCase) CreateMetricReading(metricReading entity.MetricReading) error {
-	exists, err := u.metricRepository.MetricExistsById(metricReading.MetricID)
+func (u *MetricReadingUseCase) CreateMetricReading(metricReadingDTO dto.CreateMetricReadingRequestDTO) (dto.CreateMetricReadingResponseDTO, error) {
+	metric, err := u.metricRepository.GetMetricByID(metricReadingDTO.MetricID)
 
 	if err != nil {
-		return err
+		return dto.CreateMetricReadingResponseDTO{}, err
 	}
 
-	if !exists {
-		return fmt.Errorf("metric %s does not exist", metricReading.MetricID)
+	metricReadingID, err := uuid.NewV7()
+	if err != nil {
+		return dto.CreateMetricReadingResponseDTO{}, err
 	}
 
-	return u.metricReadingRepository.CreateMetricReading(metricReading)
+	var timestamp time.Time
+
+	if metricReadingDTO.HasTimestamp() {
+		timestamp, err = time.Parse(time.RFC3339, *metricReadingDTO.Timestamp)
+		if err != nil {
+			return dto.CreateMetricReadingResponseDTO{}, err
+		}
+	}
+
+	metricReadingEntity, err := entity.NewMetricReading(metricReadingID, metric.ID, metricReadingDTO.Value, &timestamp)
+	if err != nil {
+		return dto.CreateMetricReadingResponseDTO{}, err
+	}
+
+	metricReading, err := u.metricReadingRepository.CreateMetricReading(metricReadingEntity)
+	if err != nil {
+		return dto.CreateMetricReadingResponseDTO{}, err
+	}
+
+	return dto.NewCreateMetricReadingResponseDTO(metricReading), nil
 }

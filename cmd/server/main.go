@@ -50,13 +50,22 @@ func main() {
 }
 
 func setupRoutes(router *gin.Engine) {
-	metricController := makeMetricController()
-	metricController.SetupRoutes(router)
+	metricsGroup := router.Group("/metrics")
+	metricController, metricReadingController := makeControllers()
+	metricReadingsGroup := metricsGroup.Group("/readings")
+
+	metricController.SetupRoutes(metricsGroup)
+	metricReadingController.SetupRoutes(metricReadingsGroup)
 }
 
-func makeMetricController() *controller.MetricController {
+func makeControllers() (*controller.MetricController, *controller.MetricReadingController) {
 	metricRepository := repository.NewMetricInMemoryRepository()
 	metricUseCase := use_case.NewMetricUseCase(metricRepository)
 	metricController := controller.NewMetricController(metricUseCase)
-	return metricController
+
+	metricReadingRepository := repository.NewMetricReadingInMemoryRepository()
+	metricReadingUseCase := use_case.NewMetricReadingUseCase(metricRepository, metricReadingRepository)
+	metricReadingController := controller.NewMetricReadingController(metricReadingUseCase)
+
+	return metricController, metricReadingController
 }

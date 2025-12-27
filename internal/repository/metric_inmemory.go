@@ -23,11 +23,6 @@ func (r *MetricInMemoryRepository) CreateMetric(metric entity.Metric) (entity.Me
 	return metric, nil
 }
 
-func (r *MetricInMemoryRepository) MetricExistsById(id string) (bool, error) {
-	_, ok := r.metrics[id]
-	return ok, nil
-}
-
 func (r *MetricInMemoryRepository) GetMetricByID(id string) (entity.Metric, error) {
 	metric, ok := r.metrics[id]
 	if !ok {
