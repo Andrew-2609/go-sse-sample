@@ -4,19 +4,23 @@ import (
 	"time"
 
 	"github.com/Andrew-2609/go-sse-sample/internal/domain/entity"
+	"github.com/Andrew-2609/go-sse-sample/internal/domain/enum"
 	"github.com/Andrew-2609/go-sse-sample/internal/presentation/dto"
+	"github.com/Andrew-2609/go-sse-sample/pkg/sse"
 	"github.com/google/uuid"
 )
 
 type MetricReadingUseCase struct {
 	metricRepository        entity.MetricRepository
 	metricReadingRepository entity.MetricReadingRepository
+	sseHub                  *sse.SSEHub
 }
 
-func NewMetricReadingUseCase(metricRepository entity.MetricRepository, metricReadingRepository entity.MetricReadingRepository) *MetricReadingUseCase {
+func NewMetricReadingUseCase(metricRepository entity.MetricRepository, metricReadingRepository entity.MetricReadingRepository, sseHub *sse.SSEHub) *MetricReadingUseCase {
 	return &MetricReadingUseCase{
 		metricRepository:        metricRepository,
 		metricReadingRepository: metricReadingRepository,
+		sseHub:                  sseHub,
 	}
 }
 
@@ -56,5 +60,9 @@ func (u *MetricReadingUseCase) CreateMetricReading(metricReadingDTO dto.CreateMe
 		return dto.CreateMetricReadingResponseDTO{}, err
 	}
 
-	return dto.NewCreateMetricReadingResponseDTO(metricReading), nil
+	response := dto.NewCreateMetricReadingResponseDTO(metricReading)
+
+	u.sseHub.Broadcast <- sse.NewEvent(enum.EventTypeMetricReadingCreated, response)
+
+	return response, nil
 }

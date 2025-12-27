@@ -88,7 +88,7 @@ func setupDependencies() {
 		metricController = controller.NewMetricController(metricUseCase)
 
 		metricReadingRepository := repository.NewMetricReadingInMemoryRepository()
-		metricReadingUseCase := use_case.NewMetricReadingUseCase(metricRepository, metricReadingRepository)
+		metricReadingUseCase := use_case.NewMetricReadingUseCase(metricRepository, metricReadingRepository, sseHub)
 		metricReadingController = controller.NewMetricReadingController(metricReadingUseCase)
 
 		eventsController = controller.NewEventsController(sseHub)
