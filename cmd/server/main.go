@@ -71,7 +71,8 @@ func makeControllers() (
 	*controller.MetricReadingController,
 	*controller.EventsController,
 ) {
-	sseHub := sse.NewSSEHub(MAX_SSE_CLIENTS)
+	eventStore := repository.NewEventStoreInMemory()
+	sseHub := sse.NewSSEHub(eventStore, MAX_SSE_CLIENTS)
 
 	metricRepository := repository.NewMetricInMemoryRepository()
 	metricUseCase := use_case.NewMetricUseCase(metricRepository, sseHub)

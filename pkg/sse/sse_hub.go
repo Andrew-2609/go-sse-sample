@@ -1,6 +1,7 @@
 package sse
 
 type SSEHub struct {
+	eventStore EventStore
 	clients    map[*sseClient]struct{}
 	order      []*sseClient
 	Register   chan *sseClient
@@ -9,8 +10,9 @@ type SSEHub struct {
 	maxClients int
 }
 
-func NewSSEHub(maxClients int) *SSEHub {
+func NewSSEHub(eventStore EventStore, maxClients int) *SSEHub {
 	h := &SSEHub{
+		eventStore: eventStore,
 		clients:    make(map[*sseClient]struct{}),
 		Register:   make(chan *sseClient),
 		Unregister: make(chan *sseClient),
@@ -49,6 +51,7 @@ func (h *SSEHub) run() {
 				}
 			}
 		case event := <-h.Broadcast:
+			h.eventStore.StoreEvent(event)
 			for c := range h.clients {
 				select {
 				case c.ch <- event:
@@ -61,4 +64,8 @@ func (h *SSEHub) run() {
 			}
 		}
 	}
+}
+
+func (h *SSEHub) GetEventsAfterID(id string) []Event {
+	return h.eventStore.GetEventsAfterID(id)
 }

@@ -41,10 +41,7 @@ func (u *MetricUseCase) CreateMetric(metricDTO dto.CreateMetricRequestDTO) (dto.
 
 	response := dto.NewCreateMetricResponseDTO(createdMetric)
 
-	u.sseHub.Broadcast <- sse.Event{
-		Type: enum.EventTypeMetricCreated,
-		Data: response,
-	}
+	u.sseHub.Broadcast <- sse.NewEvent(enum.EventTypeMetricCreated, response)
 
 	return response, nil
 }

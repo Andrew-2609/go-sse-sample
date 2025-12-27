@@ -3,6 +3,7 @@ package controller
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math"
 	"net/http"
@@ -60,6 +61,11 @@ func (c *EventsController) WatchEvents(ctx *gin.Context) {
 		return
 	}
 
+	if lastEventID := ctx.GetHeader("Last-Event-ID"); lastEventID != "" {
+		events := c.sseHub.GetEventsAfterID(lastEventID)
+		c.sendEvents(ctx.Writer, events...)
+	}
+
 	flusher.Flush()
 
 	// any `return` triggers defer -> unregister client
@@ -75,18 +81,7 @@ func (c *EventsController) WatchEvents(ctx *gin.Context) {
 				return
 			}
 		case event := <-client.CH():
-			if event.IsEmpty() {
-				continue
-			}
-
-			data, err := json.Marshal(event)
-			if err != nil {
-				log.Printf("error marshalling event: %v\n", err)
-				return
-			}
-
-			if _, err := fmt.Fprintf(ctx.Writer, "%s\n", string(data)); err != nil {
-				log.Printf("error sending event: %v\n", err)
+			if err := c.sendEvents(ctx.Writer, event); err != nil {
 				return
 			}
 
@@ -97,4 +92,25 @@ func (c *EventsController) WatchEvents(ctx *gin.Context) {
 			return
 		}
 	}
+}
+
+func (c *EventsController) sendEvents(w io.Writer, events ...sse.Event) error {
+	for _, event := range events {
+		if event.IsEmpty() {
+			continue
+		}
+
+		data, err := json.Marshal(event)
+		if err != nil {
+			log.Printf("error marshalling event: %v\n", err)
+			return err
+		}
+
+		if _, err := fmt.Fprintf(w, "%s\n", string(data)); err != nil {
+			log.Printf("error sending event: %v\n", err)
+			return err
+		}
+	}
+
+	return nil
 }
