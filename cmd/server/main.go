@@ -15,6 +15,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const (
+	MAX_SSE_CLIENTS = 10_000
+)
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -60,7 +64,7 @@ func setupRoutes(router *gin.Engine) {
 }
 
 func makeControllers() (*controller.MetricController, *controller.MetricReadingController) {
-	sseHub := sse.NewSSEHub()
+	sseHub := sse.NewSSEHub(MAX_SSE_CLIENTS)
 
 	metricRepository := repository.NewMetricInMemoryRepository()
 	metricUseCase := use_case.NewMetricUseCase(metricRepository, sseHub)

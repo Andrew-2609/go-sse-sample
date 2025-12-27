@@ -81,11 +81,16 @@ func (c *MetricController) WatchCreatedMetrics(ctx *gin.Context) {
 	ctx.Writer.Header().Set("Cache-Control", "no-cache")
 	ctx.Writer.Header().Set("Connection", "keep-alive")
 
-	client := make(chan sse.Event, 8)
+	connStartTime := time.Now().UTC()
+
+	client := sse.NewSSEClient(
+		make(chan sse.Event, 8),
+		connStartTime,
+	)
+
 	c.sseHub.Register <- client
 
-	connStartTime := time.Now().UTC()
-	log.Println("client connected")
+	log.Printf("new client connected at %s. Current clients len: %d\n", connStartTime.Format(time.RFC3339), c.sseHub.Len())
 
 	defer func() {
 		c.sseHub.Unregister <- client
@@ -116,7 +121,31 @@ func (c *MetricController) WatchCreatedMetrics(ctx *gin.Context) {
 	// any `return` triggers defer -> unregister client
 	for {
 		select {
-		case event := <-client:
+		case isDisconnected := <-client.IsDisconnected():
+			if isDisconnected {
+				message := connectionMessage{
+					Message: fmt.Sprintf("client disconnected at %s", time.Now().UTC().Format(time.RFC3339)),
+				}
+
+				data, err := json.Marshal(message)
+				if err != nil {
+					log.Printf("error marshalling message: %v\n", err)
+					return
+				}
+
+				if _, err := fmt.Fprintf(ctx.Writer, "%s\n", string(data)); err != nil {
+					log.Printf("error sending message: %v\n", err)
+					return
+				}
+
+				flusher.Flush()
+				return
+			}
+		case event := <-client.CH():
+			if event.IsEmpty() {
+				continue
+			}
+
 			data, err := json.Marshal(event)
 			if err != nil {
 				log.Printf("error marshalling event: %v\n", err)

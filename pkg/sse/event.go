@@ -10,3 +10,7 @@ type EventType string
 const (
 	EventTypeNone EventType = ""
 )
+
+func (e *Event) IsEmpty() bool {
+	return e.Data == nil
+}
