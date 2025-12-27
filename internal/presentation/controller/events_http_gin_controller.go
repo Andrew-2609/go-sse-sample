@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Andrew-2609/go-sse-sample/internal/presentation/dto"
 	"github.com/Andrew-2609/go-sse-sample/pkg/sse"
 	"github.com/gin-gonic/gin"
 )
@@ -54,13 +55,7 @@ func (c *EventsController) WatchEvents(ctx *gin.Context) {
 		c.sseHub.Unregister <- client
 	}()
 
-	type connectionMessage struct {
-		Message string `json:"message"`
-	}
-
-	message := connectionMessage{
-		Message: fmt.Sprintf("client connected at %s", connStartTime.Format(time.RFC3339)),
-	}
+	message := dto.NewConnectionMessageDTO("client connected at %s", connStartTime.Format(time.RFC3339))
 
 	data, err := json.Marshal(message)
 	if err != nil {
@@ -81,9 +76,7 @@ func (c *EventsController) WatchEvents(ctx *gin.Context) {
 		select {
 		case isDisconnected := <-client.IsDisconnected():
 			if isDisconnected {
-				message := connectionMessage{
-					Message: fmt.Sprintf("client disconnected at %s", time.Now().UTC().Format(time.RFC3339)),
-				}
+				message := dto.NewConnectionMessageDTO("client disconnected at %s", time.Now().UTC().Format(time.RFC3339))
 
 				data, err := json.Marshal(message)
 				if err != nil {
