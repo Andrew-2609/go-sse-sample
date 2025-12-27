@@ -1,4 +1,7 @@
 run-server:
 	go run cmd/server/main.go
 
-.PHONY: run-server
+run-client:
+	node cmd/client/client.mjs
+
+.PHONY: run-server run-client
