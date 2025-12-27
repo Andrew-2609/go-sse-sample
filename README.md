@@ -74,18 +74,27 @@ The project follows Domain-Driven Design (DDD) principles with a clean architect
 
 ## Technology Stack
 
+### Server
 - **Go**: 1.23.5
 - **Gin**: HTTP web framework
 - **UUID**: v7 for time-ordered unique identifiers
 - **In-memory storage**: For metrics, readings, and events
+
+### Client (Example)
+- **Node.js**: v22.2.0
+- **EventSource**: Node.js SSE client library
 
 ## Project Structure
 
 ```
 go-sse-sample/
 ├── cmd/
-│   └── server/
-│       └── main.go              # Application entry point
+│   ├── server/
+│   │   └── main.go              # Application entry point
+│   └── client/
+│       ├── client.mjs           # Node.js SSE client example
+│       ├── package.json
+│       └── package-lock.json
 ├── internal/
 │   ├── domain/
 │   │   ├── entity/              # Domain entities
@@ -119,6 +128,8 @@ go-sse-sample/
 │   └── api/                     # API documentation
 │       ├── metrics_api_docs.http
 │       └── metric_readings_api_docs.http
+├── .nvmrc                       # Node.js version specification
+├── .gitignore
 ├── go.mod
 ├── go.sum
 ├── Makefile
@@ -130,6 +141,7 @@ go-sse-sample/
 ### Prerequisites
 
 - Go 1.23.5 or later
+- Node.js v22.2.0 or later (for running the example client)
 - Make (optional, for using Makefile commands)
 
 ### Installation
@@ -140,9 +152,16 @@ git clone <repository-url>
 cd go-sse-sample
 ```
 
-2. Install dependencies:
+2. Install Go dependencies:
 ```bash
 go mod download
+```
+
+3. Install Node.js client dependencies (optional, for running the example client):
+```bash
+cd cmd/client
+npm install
+cd ../..
 ```
 
 ### Running the Server
@@ -161,6 +180,25 @@ The server will start on port `8089`. You should see:
 ```
 server started on port 8089
 ```
+
+### Running the Example Client
+
+A Node.js example client is provided to demonstrate SSE connectivity. Make sure the server is running first.
+
+Using Make:
+```bash
+make run-client
+```
+
+Or directly with Node.js:
+```bash
+node cmd/client/client.mjs
+```
+
+The client will:
+- Connect to the SSE endpoint
+- Listen for `metric_created` and `metric_reading_created` events
+- Log events to the console as they are received
 
 ### Stopping the Server
 
@@ -299,7 +337,7 @@ Establishes a Server-Sent Events connection to receive real-time notifications.
 }
 ```
 
-**Client Example (JavaScript):**
+**Client Example (Browser JavaScript):**
 ```javascript
 const eventSource = new EventSource('http://localhost:8089/events/watch');
 
@@ -318,6 +356,55 @@ eventSource.onerror = (error) => {
   console.error('SSE error:', error);
   // EventSource automatically handles reconnection
 };
+```
+
+**Client Example (Node.js):**
+
+A complete Node.js client example is available in `cmd/client/client.mjs`:
+
+```javascript
+import { EventSource } from "eventsource";
+
+const es = new EventSource("http://localhost:8089/events/watch");
+
+es.onmessage = (event) => {
+  switch (event.data) {
+    case "connected": {
+      console.log("SSE connected");
+      break;
+    }
+    case "disconnected": {
+      console.log("SSE disconnected");
+      es.close();
+      break;
+    }
+    default: {
+      console.log("Unexpected SSE message:", event.data);
+      break;
+    }
+  }
+};
+
+es.addEventListener("metric_created", (event) => {
+  const data = JSON.parse(event.data);
+  console.log("metric created:", data);
+});
+
+es.addEventListener("metric_reading_created", (event) => {
+  const data = JSON.parse(event.data);
+  console.log("metric reading created:", data);
+});
+
+es.onerror = (err) => {
+  console.error("SSE error:", err);
+};
+```
+
+Run it with:
+```bash
+make run-client
+# or
+node cmd/client/client.mjs
 ```
 
 **Client Example (cURL):**
@@ -441,9 +528,12 @@ Currently, the application uses hardcoded configuration. To make it configurable
 
 ### Project Dependencies
 
-Main dependencies:
+**Server dependencies:**
 - `github.com/gin-gonic/gin`: Web framework
 - `github.com/google/uuid`: UUID generation
+
+**Client dependencies:**
+- `eventsource`: Node.js Server-Sent Events client library
 
 ### Code Organization
 
