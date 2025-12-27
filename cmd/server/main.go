@@ -55,24 +55,33 @@ func main() {
 }
 
 func setupRoutes(router *gin.Engine) {
+	metricController, metricReadingController, eventsController := makeControllers()
+
 	metricsGroup := router.Group("/metrics")
-	metricController, metricReadingController := makeControllers()
 	metricReadingsGroup := metricsGroup.Group("/readings")
+	eventsGroup := router.Group("/events")
 
 	metricController.SetupRoutes(metricsGroup)
 	metricReadingController.SetupRoutes(metricReadingsGroup)
+	eventsController.SetupRoutes(eventsGroup)
 }
 
-func makeControllers() (*controller.MetricController, *controller.MetricReadingController) {
+func makeControllers() (
+	*controller.MetricController,
+	*controller.MetricReadingController,
+	*controller.EventsController,
+) {
 	sseHub := sse.NewSSEHub(MAX_SSE_CLIENTS)
 
 	metricRepository := repository.NewMetricInMemoryRepository()
 	metricUseCase := use_case.NewMetricUseCase(metricRepository, sseHub)
-	metricController := controller.NewMetricController(metricUseCase, sseHub)
+	metricController := controller.NewMetricController(metricUseCase)
 
 	metricReadingRepository := repository.NewMetricReadingInMemoryRepository()
 	metricReadingUseCase := use_case.NewMetricReadingUseCase(metricRepository, metricReadingRepository)
 	metricReadingController := controller.NewMetricReadingController(metricReadingUseCase)
 
-	return metricController, metricReadingController
+	eventsController := controller.NewEventsController(sseHub)
+
+	return metricController, metricReadingController, eventsController
 }
