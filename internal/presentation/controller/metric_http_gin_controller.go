@@ -90,7 +90,7 @@ func (c *MetricController) WatchCreatedMetrics(ctx *gin.Context) {
 
 	c.sseHub.Register <- client
 
-	log.Printf("new client connected at %s. Current clients len: %d\n", connStartTime.Format(time.RFC3339), c.sseHub.Len())
+	log.Printf("new client connected at %s\n", connStartTime.Format(time.RFC3339))
 
 	defer func() {
 		c.sseHub.Unregister <- client

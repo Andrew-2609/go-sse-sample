@@ -62,7 +62,3 @@ func (h *SSEHub) run() {
 		}
 	}
 }
-
-func (h *SSEHub) Len() int {
-	return len(h.clients)
-}
