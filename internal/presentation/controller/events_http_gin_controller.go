@@ -55,17 +55,8 @@ func (c *EventsController) WatchEvents(ctx *gin.Context) {
 		c.sseHub.Unregister <- client
 	}()
 
-	message := dto.NewConnectionMessageDTO("client connected at %s", connStartTime.Format(time.RFC3339))
-
-	data, err := json.Marshal(message)
-	if err != nil {
-		log.Printf("error marshalling message: %v\n", err)
+	if err := dto.PrintNewConnectionMessage(ctx.Writer, "client connected at %s", connStartTime.Format(time.RFC3339)); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	if _, err := fmt.Fprintf(ctx.Writer, "%s\n", string(data)); err != nil {
-		log.Printf("error sending message: %v\n", err)
 		return
 	}
 
@@ -76,16 +67,7 @@ func (c *EventsController) WatchEvents(ctx *gin.Context) {
 		select {
 		case isDisconnected := <-client.IsDisconnected():
 			if isDisconnected {
-				message := dto.NewConnectionMessageDTO("client disconnected at %s", time.Now().UTC().Format(time.RFC3339))
-
-				data, err := json.Marshal(message)
-				if err != nil {
-					log.Printf("error marshalling message: %v\n", err)
-					return
-				}
-
-				if _, err := fmt.Fprintf(ctx.Writer, "%s\n", string(data)); err != nil {
-					log.Printf("error sending message: %v\n", err)
+				if err := dto.PrintNewConnectionMessage(ctx.Writer, "client disconnected at %s", time.Now().UTC().Format(time.RFC3339)); err != nil {
 					return
 				}
 
