@@ -10,7 +10,6 @@ import (
 
 	"github.com/Andrew-2609/go-sse-sample/internal/domain/use_case"
 	"github.com/Andrew-2609/go-sse-sample/internal/presentation/controller"
-	"github.com/Andrew-2609/go-sse-sample/internal/presentation/handler"
 	"github.com/Andrew-2609/go-sse-sample/internal/repository"
 	"github.com/gin-gonic/gin"
 )
@@ -52,7 +51,7 @@ func main() {
 
 func setupRoutes(router *gin.Engine) {
 	metricController := makeMetricController()
-	handler.SetupMetricHTTPGinHandler(router, metricController)
+	metricController.SetupRoutes(router)
 }
 
 func makeMetricController() *controller.MetricController {

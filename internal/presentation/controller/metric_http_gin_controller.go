@@ -19,6 +19,11 @@ func NewMetricController(metricUseCase *use_case.MetricUseCase) *MetricControlle
 	}
 }
 
+func (c *MetricController) SetupRoutes(router *gin.Engine) {
+	router.POST("", c.CreateMetric)
+	router.GET("/:id", c.GetMetricByID)
+}
+
 func (c *MetricController) CreateMetric(ctx *gin.Context) {
 	var request dto.CreateMetricRequestDTO
 	if err := ctx.ShouldBindJSON(&request); err != nil {
