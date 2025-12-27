@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -19,9 +20,19 @@ const (
 	MAX_SSE_CLIENTS = 10_000
 )
 
+var (
+	depsOnce                sync.Once
+	metricController        *controller.MetricController
+	metricReadingController *controller.MetricReadingController
+	eventsController        *controller.EventsController
+	eventStore              *repository.EventStoreInMemory
+)
+
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	setupDependencies()
 
 	router := gin.Default()
 	setupRoutes(router)
@@ -44,6 +55,8 @@ func main() {
 	stop()
 	log.Println("shutting down gracefully, press Ctrl+C again to force")
 
+	eventStore.StopRetention()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
 	defer cancel()
 
@@ -55,8 +68,6 @@ func main() {
 }
 
 func setupRoutes(router *gin.Engine) {
-	metricController, metricReadingController, eventsController := makeControllers()
-
 	metricsGroup := router.Group("/metrics")
 	metricReadingsGroup := metricsGroup.Group("/readings")
 	eventsGroup := router.Group("/events")
@@ -66,23 +77,20 @@ func setupRoutes(router *gin.Engine) {
 	eventsController.SetupRoutes(eventsGroup)
 }
 
-func makeControllers() (
-	*controller.MetricController,
-	*controller.MetricReadingController,
-	*controller.EventsController,
-) {
-	eventStore := repository.NewEventStoreInMemory()
-	sseHub := sse.NewSSEHub(eventStore, MAX_SSE_CLIENTS)
+func setupDependencies() {
+	depsOnce.Do(func() {
+		inMemoryEventsTTL := 1 * time.Minute
+		eventStore = repository.NewEventStoreInMemory(inMemoryEventsTTL)
+		sseHub := sse.NewSSEHub(eventStore, MAX_SSE_CLIENTS)
 
-	metricRepository := repository.NewMetricInMemoryRepository()
-	metricUseCase := use_case.NewMetricUseCase(metricRepository, sseHub)
-	metricController := controller.NewMetricController(metricUseCase)
+		metricRepository := repository.NewMetricInMemoryRepository()
+		metricUseCase := use_case.NewMetricUseCase(metricRepository, sseHub)
+		metricController = controller.NewMetricController(metricUseCase)
 
-	metricReadingRepository := repository.NewMetricReadingInMemoryRepository()
-	metricReadingUseCase := use_case.NewMetricReadingUseCase(metricRepository, metricReadingRepository)
-	metricReadingController := controller.NewMetricReadingController(metricReadingUseCase)
+		metricReadingRepository := repository.NewMetricReadingInMemoryRepository()
+		metricReadingUseCase := use_case.NewMetricReadingUseCase(metricRepository, metricReadingRepository)
+		metricReadingController = controller.NewMetricReadingController(metricReadingUseCase)
 
-	eventsController := controller.NewEventsController(sseHub)
-
-	return metricController, metricReadingController, eventsController
+		eventsController = controller.NewEventsController(sseHub)
+	})
 }

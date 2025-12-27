@@ -2,14 +2,16 @@ package sse
 
 import (
 	"log"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 type Event struct {
-	ID   string    `json:"id,omitempty"`
-	Type EventType `json:"type,omitempty"`
-	Data any       `json:"data"`
+	ID        string    `json:"id,omitempty"`
+	Type      EventType `json:"type,omitempty"`
+	Data      any       `json:"data"`
+	CreatedAt time.Time `json:"-"`
 }
 
 type EventType string
@@ -29,9 +31,10 @@ func NewEvent(eventType EventType, data any) Event {
 	}
 
 	return Event{
-		ID:   id,
-		Type: eventType,
-		Data: data,
+		ID:        id,
+		Type:      eventType,
+		Data:      data,
+		CreatedAt: time.Now().UTC(),
 	}
 }
 
