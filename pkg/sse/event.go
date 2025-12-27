@@ -9,7 +9,7 @@ import (
 
 type Event struct {
 	ID        string    `json:"id,omitempty"`
-	Type      EventType `json:"type,omitempty"`
+	Type      EventType `json:"event,omitempty"` // having it serialized as "event" is compliant with the EventSource spec
 	Data      any       `json:"data"`
 	CreatedAt time.Time `json:"-"`
 }

@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Andrew-2609/go-sse-sample/internal/presentation/dto"
 	"github.com/Andrew-2609/go-sse-sample/pkg/sse"
 	"github.com/gin-gonic/gin"
 )
@@ -56,7 +55,7 @@ func (c *EventsController) WatchEvents(ctx *gin.Context) {
 		c.sseHub.Unregister <- client
 	}()
 
-	if err := dto.PrintNewConnectionMessage(ctx.Writer, "client connected at %s", connStartTime.Format(time.RFC3339)); err != nil {
+	if err := c.printDataMessage(ctx.Writer, "connected"); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -73,7 +72,10 @@ func (c *EventsController) WatchEvents(ctx *gin.Context) {
 		select {
 		case isDisconnected := <-client.IsDisconnected():
 			if isDisconnected {
-				if err := dto.PrintNewConnectionMessage(ctx.Writer, "client disconnected at %s", time.Now().UTC().Format(time.RFC3339)); err != nil {
+				connDuration := time.Since(connStartTime)
+				log.Printf("client disconnected after %d seconds", int(math.Ceil(connDuration.Seconds())))
+
+				if err := c.printDataMessage(ctx.Writer, "disconnected"); err != nil {
 					return
 				}
 
@@ -95,21 +97,48 @@ func (c *EventsController) WatchEvents(ctx *gin.Context) {
 }
 
 func (c *EventsController) sendEvents(w io.Writer, events ...sse.Event) error {
+	printLines := func(lines ...string) error {
+		for _, line := range lines {
+			if _, err := fmt.Fprintf(w, "%s\n", line); err != nil {
+				return fmt.Errorf("error sending line: %w", err)
+			}
+		}
+
+		return nil
+	}
+
 	for _, event := range events {
 		if event.IsEmpty() {
 			continue
 		}
 
-		data, err := json.Marshal(event)
+		eventData, err := json.Marshal(event.Data)
 		if err != nil {
-			log.Printf("error marshalling event: %v\n", err)
+			return fmt.Errorf("error marshalling event data: %w", err)
+		}
+
+		lines := []string{
+			fmt.Sprintf("id: %s", event.ID),
+			fmt.Sprintf("event: %s", event.Type),
+			fmt.Sprintf("data: %s", string(eventData)),
+		}
+
+		if err := printLines(lines...); err != nil {
 			return err
 		}
 
-		if _, err := fmt.Fprintf(w, "%s\n", string(data)); err != nil {
-			log.Printf("error sending event: %v\n", err)
-			return err
+		// end of event (CRITICAL)
+		if _, err := fmt.Fprintf(w, "\n"); err != nil {
+			return fmt.Errorf("error sending event end of line: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func (c *EventsController) printDataMessage(w io.Writer, message string, args ...any) error {
+	if _, err := fmt.Fprintf(w, "data: %s\n\n", fmt.Sprintf(message, args...)); err != nil {
+		return fmt.Errorf("error sending message: %w", err)
 	}
 
 	return nil
