@@ -1,23 +1,36 @@
+import { useMemo, memo } from 'react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import './MetricCard.css'
 
-function MetricCard({ metric }) {
-  // Prepare data for the chart (last 20 readings for performance)
-  const chartData = metric.readings
-    .slice(-20)
-    .map((reading) => ({
-      time: reading.timestamp.toLocaleTimeString(),
-      value: reading.value,
-      timestamp: reading.timestamp
-    }))
+const MetricCard = memo(function MetricCard({ metric }) {
+  // Memoize chart data - only recalculate when readings change
+  const chartData = useMemo(() => {
+    return metric.readings
+      .slice(-20)
+      .map((reading) => ({
+        time: reading.timestamp.toLocaleTimeString(),
+        value: reading.value,
+        timestamp: reading.timestamp
+      }))
+  }, [metric.readings])
 
-  const latestReading = metric.readings.length > 0 
-    ? metric.readings[metric.readings.length - 1]
-    : null
+  // Memoize latest reading
+  const latestReading = useMemo(() => {
+    return metric.readings.length > 0 
+      ? metric.readings[metric.readings.length - 1]
+      : null
+  }, [metric.readings])
 
-  const averageValue = metric.readings.length > 0
-    ? (metric.readings.reduce((sum, r) => sum + r.value, 0) / metric.readings.length).toFixed(2)
-    : 0
+  // Memoize average calculation
+  const averageValue = useMemo(() => {
+    if (metric.readings.length === 0) return 0
+    return (metric.readings.reduce((sum, r) => sum + r.value, 0) / metric.readings.length).toFixed(2)
+  }, [metric.readings])
+
+  // Memoize recent readings list
+  const recentReadings = useMemo(() => {
+    return metric.readings.slice(-5).reverse()
+  }, [metric.readings])
 
   return (
     <div className="metric-card">
@@ -46,12 +59,16 @@ function MetricCard({ metric }) {
       {metric.readings.length > 0 ? (
         <div className="metric-chart">
           <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData}>
+            <LineChart 
+              data={chartData}
+              margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
               <XAxis 
                 dataKey="time" 
                 stroke="#666"
                 fontSize={12}
+                interval="preserveStartEnd"
               />
               <YAxis 
                 stroke="#666"
@@ -71,8 +88,10 @@ function MetricCard({ metric }) {
                 dataKey="value" 
                 stroke="#667eea" 
                 strokeWidth={2}
-                dot={{ fill: '#667eea', r: 3 }}
-                activeDot={{ r: 5 }}
+                dot={false}
+                isAnimationActive={true}
+                animationDuration={300}
+                activeDot={{ r: 4 }}
               />
             </LineChart>
           </ResponsiveContainer>
@@ -87,7 +106,7 @@ function MetricCard({ metric }) {
         <div className="metric-readings-list">
           <h3>Recent Readings</h3>
           <div className="readings-scroll">
-            {metric.readings.slice(-5).reverse().map((reading) => (
+            {recentReadings.map((reading) => (
               <div key={reading.id} className="reading-item">
                 <span className="reading-value">{reading.value.toFixed(2)}</span>
                 <span className="reading-time">
@@ -100,7 +119,33 @@ function MetricCard({ metric }) {
       )}
     </div>
   )
-}
+}, (prevProps, nextProps) => {
+  // Return true if props are equal (skip re-render), false if different (re-render)
+  
+  // Re-render if ID or name changed
+  if (prevProps.metric.id !== nextProps.metric.id || 
+      prevProps.metric.name !== nextProps.metric.name) {
+    return false // Props changed, should re-render
+  }
+  
+  // Re-render if readings count changed
+  if (prevProps.metric.readings.length !== nextProps.metric.readings.length) {
+    return false // Props changed, should re-render
+  }
+  
+  // Check if the last reading changed (most common case for updates)
+  const prevLast = prevProps.metric.readings[prevProps.metric.readings.length - 1]
+  const nextLast = nextProps.metric.readings[nextProps.metric.readings.length - 1]
+  
+  if (!prevLast && !nextLast) return true // Both empty, no change, skip re-render
+  if (!prevLast || !nextLast) return false // One is empty, changed, should re-render
+  if (prevLast.id !== nextLast.id || prevLast.value !== nextLast.value) {
+    return false // Last reading changed, should re-render
+  }
+  
+  // No significant changes detected, skip re-render
+  return true
+})
 
 export default MetricCard
 

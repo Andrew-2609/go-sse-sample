@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 
 const API_BASE_URL = 'http://localhost:8089'
 
@@ -7,15 +7,37 @@ export function useSSE() {
   const [connectionStatus, setConnectionStatus] = useState('disconnected')
   const [debugMessages, setDebugMessages] = useState([])
   const eventSourceRef = useRef(null)
+  const updateQueueRef = useRef([])
+  const rafIdRef = useRef(null)
 
-  const addDebugMessage = (message, type = 'info') => {
+  const addDebugMessage = useCallback((message, type = 'info') => {
     const timestamp = new Date().toLocaleTimeString()
     setDebugMessages((prev) => {
       const newMessages = [...prev, { message, type, timestamp }]
       // Keep only last 20 messages
       return newMessages.slice(-20)
     })
-  }
+  }, [])
+
+  // Batch state updates using requestAnimationFrame for smooth rendering
+  const flushUpdates = useCallback(() => {
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current)
+    }
+    
+    rafIdRef.current = requestAnimationFrame(() => {
+      if (updateQueueRef.current.length === 0) return
+      
+      setMetrics((prev) => {
+        const newMap = new Map(prev)
+        for (const update of updateQueueRef.current) {
+          update(newMap)
+        }
+        updateQueueRef.current = []
+        return newMap
+      })
+    })
+  }, [])
 
   useEffect(() => {
     let wasConnected = false
@@ -125,14 +147,15 @@ export function useSSE() {
         }
       })
 
-      // Handle metric_reading_created events
+      // Handle metric_reading_created events - optimized for high frequency
       eventSource.addEventListener('metric_reading_created', (event) => {
         if (isCleaningUp) return
         
         try {
           const data = JSON.parse(event.data)
-          setMetrics((prev) => {
-            const newMap = new Map(prev)
+          
+          // Queue the update instead of applying immediately
+          updateQueueRef.current.push((newMap) => {
             const metric = newMap.get(data.metric_id)
             
             if (metric) {
@@ -142,26 +165,27 @@ export function useSSE() {
                 timestamp: new Date(data.timestamp)
               }
               
-              // Check if reading already exists (avoid duplicates from initial load + SSE)
+              // Check if reading already exists (avoid duplicates)
               const readingExists = metric.readings.some(r => r.id === data.id)
               if (!readingExists) {
-                // Add reading to the metric's readings array
+                // Optimize: append to end if timestamp is newer (most common case)
+                const lastReading = metric.readings[metric.readings.length - 1]
+                const isNewer = !lastReading || newReading.timestamp >= lastReading.timestamp
+                
                 const updatedMetric = {
                   ...metric,
-                  readings: [...metric.readings, newReading].sort(
-                    (a, b) => a.timestamp - b.timestamp
-                  )
+                  readings: isNewer
+                    ? [...metric.readings, newReading] // Fast path: just append
+                    : [...metric.readings, newReading].sort((a, b) => a.timestamp - b.timestamp) // Slow path: sort
                 }
                 
                 newMap.set(data.metric_id, updatedMetric)
-                addDebugMessage(`Reading added: ${data.value} for metric ${data.metric_id.slice(0, 8)}...`, 'success')
               }
-            } else {
-              addDebugMessage(`Received reading for unknown metric: ${data.metric_id}`, 'warning')
             }
-            
-            return newMap
           })
+          
+          // Flush updates on next animation frame for smooth rendering
+          flushUpdates()
         } catch (error) {
           addDebugMessage(`Error parsing metric_reading_created event: ${error.message}`, 'error')
         }
@@ -185,17 +209,26 @@ export function useSSE() {
 
     return () => {
       isCleaningUp = true
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current)
+      }
       if (eventSourceRef.current) {
         eventSourceRef.current.close()
         setConnectionStatus('disconnected')
       }
     }
-  }, [])
+  }, [addDebugMessage, flushUpdates])
 
   const isHealthy = connectionStatus === 'connected' && debugMessages.filter(m => m.type === 'error').length === 0
 
+  // Memoize metrics array - convert Map to array efficiently
+  // Since we batch updates with requestAnimationFrame, the Map reference only changes on flush
+  const metricsArray = useMemo(() => {
+    return Array.from(metrics.values())
+  }, [metrics])
+
   return {
-    metrics: Array.from(metrics.values()),
+    metrics: metricsArray,
     connectionStatus,
     debugMessages,
     isHealthy
