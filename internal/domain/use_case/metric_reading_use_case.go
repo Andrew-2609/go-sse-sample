@@ -16,11 +16,11 @@ type MetricReadingUseCase struct {
 	sseHub                  *sse.SSEHub
 }
 
-func NewMetricReadingUseCase(metricRepository entity.MetricRepository, metricReadingRepository entity.MetricReadingRepository, sseHub *sse.SSEHub) *MetricReadingUseCase {
+func NewMetricReadingUseCase(metricRepository entity.MetricRepository, metricReadingRepository entity.MetricReadingRepository) *MetricReadingUseCase {
 	return &MetricReadingUseCase{
 		metricRepository:        metricRepository,
 		metricReadingRepository: metricReadingRepository,
-		sseHub:                  sseHub,
+		sseHub:                  sse.GetSSEHub(),
 	}
 }
 

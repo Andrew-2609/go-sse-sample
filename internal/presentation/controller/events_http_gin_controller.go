@@ -17,9 +17,9 @@ type EventsController struct {
 	sseHub *sse.SSEHub
 }
 
-func NewEventsController(sseHub *sse.SSEHub) *EventsController {
+func NewEventsController() *EventsController {
 	return &EventsController{
-		sseHub: sseHub,
+		sseHub: sse.GetSSEHub(),
 	}
 }
 

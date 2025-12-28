@@ -13,10 +13,10 @@ type MetricUseCase struct {
 	sseHub           *sse.SSEHub
 }
 
-func NewMetricUseCase(metricRepository entity.MetricRepository, sseHub *sse.SSEHub) *MetricUseCase {
+func NewMetricUseCase(metricRepository entity.MetricRepository) *MetricUseCase {
 	return &MetricUseCase{
 		metricRepository: metricRepository,
-		sseHub:           sseHub,
+		sseHub:           sse.GetSSEHub(),
 	}
 }
 

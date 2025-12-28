@@ -81,16 +81,16 @@ func setupDependencies() {
 	depsOnce.Do(func() {
 		inMemoryEventsTTL := 1 * time.Minute
 		eventStore = repository.NewEventStoreInMemory(inMemoryEventsTTL)
-		sseHub := sse.NewSSEHub(eventStore, MAX_SSE_CLIENTS)
+		sse.InitializeSSEHub(eventStore, MAX_SSE_CLIENTS)
 
 		metricRepository := repository.NewMetricInMemoryRepository()
-		metricUseCase := use_case.NewMetricUseCase(metricRepository, sseHub)
+		metricUseCase := use_case.NewMetricUseCase(metricRepository)
 		metricController = controller.NewMetricController(metricUseCase)
 
 		metricReadingRepository := repository.NewMetricReadingInMemoryRepository()
-		metricReadingUseCase := use_case.NewMetricReadingUseCase(metricRepository, metricReadingRepository, sseHub)
+		metricReadingUseCase := use_case.NewMetricReadingUseCase(metricRepository, metricReadingRepository)
 		metricReadingController = controller.NewMetricReadingController(metricReadingUseCase)
 
-		eventsController = controller.NewEventsController(sseHub)
+		eventsController = controller.NewEventsController()
 	})
 }

@@ -1,5 +1,12 @@
 package sse
 
+import "sync"
+
+var (
+	sseHubSingleton *SSEHub
+	sseHubOnce      sync.Once
+)
+
 type SSEHub struct {
 	eventStore EventStore
 	clients    map[*sseClient]struct{}
@@ -10,19 +17,31 @@ type SSEHub struct {
 	maxClients int
 }
 
-func NewSSEHub(eventStore EventStore, maxClients int) *SSEHub {
-	h := &SSEHub{
-		eventStore: eventStore,
-		clients:    make(map[*sseClient]struct{}),
-		Register:   make(chan *sseClient),
-		Unregister: make(chan *sseClient),
-		Broadcast:  make(chan Event),
-		maxClients: maxClients,
+func InitializeSSEHub(eventStore EventStore, maxClients int) {
+	if sseHubSingleton != nil {
+		return
 	}
 
-	go h.run()
+	sseHubOnce.Do(func() {
+		sseHubSingleton = &SSEHub{
+			eventStore: eventStore,
+			clients:    make(map[*sseClient]struct{}),
+			Register:   make(chan *sseClient),
+			Unregister: make(chan *sseClient),
+			Broadcast:  make(chan Event),
+			maxClients: maxClients,
+		}
 
-	return h
+		go sseHubSingleton.run()
+	})
+}
+
+func GetSSEHub() *SSEHub {
+	if sseHubSingleton == nil {
+		panic("SSEHub not initialized")
+	}
+
+	return sseHubSingleton
 }
 
 func (h *SSEHub) run() {
