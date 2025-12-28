@@ -199,7 +199,10 @@ server started on port 8089
 
 ### Running the React Dashboard (Demonstration Tool)
 
-A React dashboard is provided to visually demonstrate SSE functionality in real-time. This dashboard was created by **Auto (Cursor AI agent)** as a demonstration tool. Make sure the server is running first:
+> [!note]
+> The React dashboard was created by Cursor as a demonstration tool to showcase SSE capabilities. The dashboard serves as a visual demonstration tool. The SSE implementation itself is client-agnostic and can be integrated with any front-end technology.
+> I first thought of having only the back-end implemented, and a simple `.mjs` client. But a more visual feedback would be so very welcome that I asked my man Cursor to build it from scratch, with just some adjustments here and there when needed.
+
 
 ```bash
 make run-client
@@ -244,7 +247,7 @@ These endpoints demonstrate how domain actions trigger SSE events:
 - `GET /metrics/:id` - Get metric by ID
 - `POST /metrics/readings` - Create a reading (triggers `metric_reading_created` event)
 
-A React dashboard is available in `cmd/client/` to visually demonstrate SSE in action.
+The React dashboard is available in `cmd/client/` to visually demonstrate SSE in action.
 
 ## SSE Implementation
 
@@ -335,21 +338,7 @@ To modify these values, edit the constants and variables in `main.go`.
 
 ### Visual Demo
 
-A React dashboard is included to demonstrate the SSE system in action. The dashboard shows:
-
-- **Real-time Updates**: Metrics and readings appear instantly via SSE without polling
-- **Initial State Loading**: New connections automatically load existing data
-- **High-Frequency Support**: Optimized rendering handles updates faster than 500ms
-- **Adaptive Animations**: Chart animations adjust based on metric input frequency
-- **Connection Monitoring**: Visual indicators for connection status and health
-
-**Video/GIF Demo**:
-
 https://github.com/user-attachments/assets/da8d5a7c-87ba-40ab-aab5-d23c8c35396a
-
-> [!note]
-> The React dashboard was created by Cursor as a demonstration tool to showcase SSE capabilities. The dashboard serves as a visual demonstration tool. The SSE implementation itself is client-agnostic and can be integrated with any front-end technology.
-> I first thought of having only the back-end implemented, and a simple `.mjs` client. But a more visual feedback would be so very welcome that I asked my man Cursor to build it from scratch, with just some adjustments here and there when needed.
 
 ## Development
 
