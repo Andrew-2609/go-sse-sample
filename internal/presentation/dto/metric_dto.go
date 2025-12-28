@@ -26,9 +26,10 @@ func NewCreateMetricResponseDTO(metric entity.Metric) CreateMetricResponseDTO {
 }
 
 type GetMetricByIDResponseDTO struct {
-	ID       string                         `json:"id"`
-	Name     string                         `json:"name"`
-	Readings *[]GetMetricReadingResponseDTO `json:"readings,omitempty"`
+	ID             string                         `json:"id"`
+	Name           string                         `json:"name"`
+	InputFrequency time.Duration                  `json:"input_frequency"`
+	Readings       *[]GetMetricReadingResponseDTO `json:"readings,omitempty"`
 }
 
 func NewGetMetricByIDResponseDTO(metric entity.Metric, readings []entity.MetricReading) GetMetricByIDResponseDTO {
@@ -38,8 +39,9 @@ func NewGetMetricByIDResponseDTO(metric entity.Metric, readings []entity.MetricR
 	}
 
 	return GetMetricByIDResponseDTO{
-		ID:       metric.ID.String(),
-		Name:     metric.Name,
-		Readings: &readingsDTO,
+		ID:             metric.ID.String(),
+		Name:           metric.Name,
+		InputFrequency: metric.InputFrequency,
+		Readings:       &readingsDTO,
 	}
 }
