@@ -13,6 +13,7 @@ A Go-based Server-Sent Events (SSE) implementation demonstrating real-time event
 - [SSE Events](#sse-events)
 - [Architecture Details](#architecture-details)
 - [API Examples](#api-examples)
+- [Demonstration](#demonstration)
 - [Development](#development)
 
 ## Overview
@@ -90,9 +91,11 @@ The project follows Domain-Driven Design (DDD) principles with a clean architect
 - **UUID**: v7 for time-ordered unique identifiers
 - **In-memory storage**: For metrics, readings, and events
 
-### Client (Example)
-- **Node.js**: v22.2.0
-- **EventSource**: Node.js SSE client library
+### Client (Demonstration Tool)
+- **React**: UI library for building the dashboard
+- **Vite**: Fast build tool and dev server
+- **Recharts**: Charting library for real-time data visualization
+- **EventSource API**: Browser API for SSE connections
 
 ## Project Structure
 
@@ -102,9 +105,13 @@ go-sse-sample/
 │   ├── server/
 │   │   └── main.go              # Application entry point
 │   └── client/
-│       ├── client.mjs           # Node.js SSE client example
+│       ├── src/                 # React dashboard (SSE demonstration tool)
+│       │   ├── components/      # React components
+│       │   ├── hooks/           # Custom hooks (useSSE)
+│       │   └── main.jsx         # React entry point
+│       ├── index.html
 │       ├── package.json
-│       └── package-lock.json
+│       └── vite.config.js
 ├── internal/
 │   ├── domain/
 │   │   ├── entity/              # Domain entities
@@ -151,7 +158,7 @@ go-sse-sample/
 ### Prerequisites
 
 - Go 1.23.5 or later
-- Node.js v22.2.0 or later (for running the example client)
+- Node.js v22.2.0 or later (for running the React dashboard demonstration)
 - Make (optional, for using Makefile commands)
 
 ### Installation
@@ -167,7 +174,7 @@ cd go-sse-sample
 go mod download
 ```
 
-3. Install Node.js client dependencies (optional, for running the example client):
+3. Install React dashboard dependencies (optional, for running the demonstration dashboard):
 ```bash
 cd cmd/client
 npm install
@@ -191,15 +198,24 @@ The server will start on port `8089`. You should see:
 server started on port 8089
 ```
 
-### Running the Example Client
+### Running the React Dashboard (Demonstration Tool)
 
-A Node.js example client is provided to demonstrate SSE connectivity. Make sure the server is running first:
+A React dashboard is provided to visually demonstrate SSE functionality in real-time. This dashboard was created by **Auto (Cursor AI agent)** as a demonstration tool. Make sure the server is running first:
 
 ```bash
 make run-client
 # or
-node cmd/client/client.mjs
+cd cmd/client && npm run dev
 ```
+
+The dashboard will be available at `http://localhost:5173` (or the port shown in the terminal). It provides:
+- Real-time metrics visualization with live charts
+- Connection status monitoring
+- Debug panel for troubleshooting
+- Automatic initial state loading on connection
+- Optimized rendering for high-frequency updates
+
+**Note**: The React dashboard is a demonstration tool to showcase SSE capabilities. The core SSE implementation is server-side and can be used with any client.
 
 ### Stopping the Server
 
@@ -225,10 +241,11 @@ For detailed API documentation and examples, see the `docs/api/` directory:
 
 These endpoints demonstrate how domain actions trigger SSE events:
 - `POST /metrics` - Create a metric (triggers `metric_created` event)
+- `GET /metrics` - Get all metrics (with optional `?with_readings=true` parameter)
 - `GET /metrics/:id` - Get metric by ID
 - `POST /metrics/readings` - Create a reading (triggers `metric_reading_created` event)
 
-A Node.js SSE client example is available in `cmd/client/client.mjs`.
+A React dashboard is available in `cmd/client/` to visually demonstrate SSE in action.
 
 ## SSE Implementation
 
@@ -264,7 +281,7 @@ Clients can reconnect using the `Last-Event-ID` header to receive events that oc
 - Slow clients automatically dropped if they can't keep up with the event stream
 - Graceful connection cleanup on disconnect
 
-See `cmd/client/client.mjs` for a complete Node.js client example.
+See `cmd/client/` for a complete React dashboard implementation demonstrating SSE connectivity.
 
 ## Architecture Details
 
@@ -312,6 +329,22 @@ Default configuration (in `cmd/server/main.go`):
 **SSE Hub Initialization**: The SSE Hub singleton is initialized during application startup via `sse.InitializeSSEHub(eventStore, maxClients)`. It must be initialized before any components attempt to access it via `sse.GetSSEHub()`.
 
 To modify these values, edit the constants and variables in `main.go`.
+
+## Demonstration
+
+### Visual Demo
+
+A React dashboard is included to demonstrate the SSE system in action. The dashboard shows:
+
+- **Real-time Updates**: Metrics and readings appear instantly via SSE without polling
+- **Initial State Loading**: New connections automatically load existing data
+- **High-Frequency Support**: Optimized rendering handles updates faster than 500ms
+- **Adaptive Animations**: Chart animations adjust based on metric input frequency
+- **Connection Monitoring**: Visual indicators for connection status and health
+
+**Video/GIF Demo**: _[Add video or GIF here demonstrating the system working]_
+
+**Note**: The React dashboard was created by Auto (Cursor AI agent) as a demonstration tool to showcase SSE capabilities. The dashboard serves as a visual demonstration tool. The SSE implementation itself is client-agnostic and can be integrated with any front-end technology.
 
 ## Development
 
