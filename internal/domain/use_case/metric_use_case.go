@@ -1,6 +1,8 @@
 package use_case
 
 import (
+	"time"
+
 	"github.com/Andrew-2609/go-sse-sample/internal/domain/entity"
 	"github.com/Andrew-2609/go-sse-sample/internal/domain/enum"
 	"github.com/Andrew-2609/go-sse-sample/internal/presentation/dto"
@@ -27,7 +29,12 @@ func (u *MetricUseCase) CreateMetric(metricDTO dto.CreateMetricRequestDTO) (dto.
 		return dto.CreateMetricResponseDTO{}, err
 	}
 
-	metricEntity, err := entity.NewMetric(metricID, metricDTO.Name)
+	inputFrequency, err := time.ParseDuration(metricDTO.InputFrequency)
+	if err != nil {
+		return dto.CreateMetricResponseDTO{}, err
+	}
+
+	metricEntity, err := entity.NewMetric(metricID, metricDTO.Name, inputFrequency)
 
 	if err != nil {
 		return dto.CreateMetricResponseDTO{}, err

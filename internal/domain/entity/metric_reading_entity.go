@@ -63,7 +63,11 @@ func (m *MetricReading) validate() error {
 	return nil
 }
 
+func (m *MetricReading) IsEmpty() bool {
+	return m.ID == uuid.Nil || m.MetricID == uuid.Nil || m.Timestamp.IsZero()
+}
+
 type MetricReadingRepository interface {
 	CreateMetricReading(metricReading MetricReading) (MetricReading, error)
-	GetLastMetricReadingValue(metricID uuid.UUID) (float64, error)
+	GetLastMetricReading(metricID uuid.UUID) (MetricReading, error)
 }

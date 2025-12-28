@@ -29,7 +29,7 @@ func (r *MetricReadingInMemoryRepository) CreateMetricReading(metricReading enti
 	return metricReading, nil
 }
 
-func (r *MetricReadingInMemoryRepository) GetLastMetricReadingValue(metricID uuid.UUID) (float64, error) {
+func (r *MetricReadingInMemoryRepository) GetLastMetricReading(metricID uuid.UUID) (entity.MetricReading, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -42,12 +42,12 @@ func (r *MetricReadingInMemoryRepository) GetLastMetricReadingValue(metricID uui
 	}
 
 	if len(metricReadings) == 0 {
-		return 0, nil
+		return entity.MetricReading{}, nil
 	}
 
 	sort.Slice(metricReadings, func(i, j int) bool {
 		return metricReadings[i].Timestamp.After(metricReadings[j].Timestamp)
 	})
 
-	return metricReadings[0].Value, nil
+	return metricReadings[0], nil
 }

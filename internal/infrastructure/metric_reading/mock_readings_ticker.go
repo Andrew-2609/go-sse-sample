@@ -48,17 +48,35 @@ func (t *MockReadingsTicker) Start() {
 				}
 
 				for _, metric := range metrics {
-					lastReadingValue, err := t.metricReadingRepository.GetLastMetricReadingValue(metric.ID)
+					lastReading, err := t.metricReadingRepository.GetLastMetricReading(metric.ID)
 
 					if err != nil {
 						log.Printf("error getting last metric reading for metric %s: %s", metric.ID, err)
 						continue
 					}
 
+					if !lastReading.IsEmpty() && metric.InputFrequency > 0 {
+						timeSinceLastReading := time.Since(lastReading.Timestamp)
+						if timeSinceLastReading < metric.InputFrequency {
+							continue
+						}
+					}
+
 					newMetricReadingID, err := uuid.NewV7()
 
-					randomIncrease := rand.Float64() * 10
-					newReadingValue := lastReadingValue + randomIncrease
+					var randomIncreaseOrDecrease float64
+
+					if rand.Int32N(3) == 0 {
+						if rand.Int32N(100) == 0 { // 1% chance of halving the value
+							randomIncreaseOrDecrease = lastReading.Value / 2
+						} else {
+							randomIncreaseOrDecrease = -rand.Float64() * 5
+						}
+					} else {
+						randomIncreaseOrDecrease = rand.Float64() * 5
+					}
+
+					newReadingValue := lastReading.Value + randomIncreaseOrDecrease
 
 					newMetricReading, err := entity.NewMetricReading(newMetricReadingID, metric.ID, newReadingValue, nil)
 					if err != nil {

@@ -28,6 +28,7 @@ var (
 	metricReadingController *controller.MetricReadingController
 	eventsController        *controller.EventsController
 	eventStore              *repository.EventStoreInMemory
+	mockReadingsTicker      *metric_reading.MockReadingsTicker
 )
 
 func main() {
@@ -59,16 +60,7 @@ func main() {
 	stop()
 	log.Println("shutting down gracefully, press Ctrl+C again to force")
 
-	eventStore.StopRetention()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Printf("server forced to shutdown: %v\n", err)
-	}
-
-	log.Println("server exiting")
+	gracefulShutdown(srv)
 }
 
 func setupRoutes(router *gin.Engine) {
@@ -98,7 +90,7 @@ func setupDependencies() {
 		eventsController = controller.NewEventsController()
 
 		if os.Getenv("MOCK_READINGS_TICKER") == "true" {
-			mockReadingsTicker := metric_reading.NewMockReadingsTicker(metricRepository, metricReadingRepository, 5*time.Second)
+			mockReadingsTicker = metric_reading.NewMockReadingsTicker(metricRepository, metricReadingRepository, 1*time.Second)
 			mockReadingsTicker.Start()
 		}
 	})
@@ -119,4 +111,21 @@ func corsMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+func gracefulShutdown(srv *http.Server) {
+	eventStore.StopRetention()
+
+	if mockReadingsTicker != nil {
+		mockReadingsTicker.Stop()
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Printf("server forced to shutdown: %v\n", err)
+	}
+
+	log.Println("server exiting")
 }

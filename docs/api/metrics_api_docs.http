@@ -2,11 +2,13 @@
 
 ### Create Metric
 # @prompt name
+# @prompt inputFrequency
 POST {{baseUrl}}/metrics
 Content-Type: application/json
 
 {
-    "name": "{{name}}"
+    "name": "{{name}}",
+    "input_frequency": "{{inputFrequency}}"
 }
 
 ### Get Metric by ID

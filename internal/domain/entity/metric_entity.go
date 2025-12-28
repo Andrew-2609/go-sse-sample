@@ -3,19 +3,22 @@ package entity
 import (
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 type Metric struct {
-	ID   uuid.UUID
-	Name string
+	ID             uuid.UUID
+	Name           string
+	InputFrequency time.Duration
 }
 
-func NewMetric(id uuid.UUID, name string) (Metric, error) {
+func NewMetric(id uuid.UUID, name string, inputFrequency time.Duration) (Metric, error) {
 	metric := Metric{
-		ID:   id,
-		Name: name,
+		ID:             id,
+		Name:           name,
+		InputFrequency: inputFrequency,
 	}
 
 	if err := metric.validate(); err != nil {
@@ -36,6 +39,10 @@ func (m *Metric) validate() error {
 
 	if strings.TrimSpace(m.Name) == "" {
 		return errors.New("name is required")
+	}
+
+	if m.InputFrequency < 0 {
+		return errors.New("input frequency must be greater than or equal to 0")
 	}
 
 	return nil
