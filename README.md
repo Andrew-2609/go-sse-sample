@@ -347,7 +347,9 @@ A React dashboard is included to demonstrate the SSE system in action. The dashb
 
 https://github.com/user-attachments/assets/da8d5a7c-87ba-40ab-aab5-d23c8c35396a
 
-**Note**: The React dashboard was created by Auto (Cursor AI agent) as a demonstration tool to showcase SSE capabilities. The dashboard serves as a visual demonstration tool. The SSE implementation itself is client-agnostic and can be integrated with any front-end technology.
+> [!note]
+> The React dashboard was created by Cursor as a demonstration tool to showcase SSE capabilities. The dashboard serves as a visual demonstration tool. The SSE implementation itself is client-agnostic and can be integrated with any front-end technology.
+> I first thought of having only the back-end implemented, and a simple `.mjs` client. But a more visual feedback would be so very welcome that I asked my man Cursor to build it from scratch, with just some adjustments here and there when needed.
 
 ## Development
 
