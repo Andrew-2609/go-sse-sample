@@ -97,7 +97,9 @@ The project follows Domain-Driven Design (DDD) principles with a clean architect
 - **EventSource API**: Browser API for SSE connections
 
 > [!note]
-> The React dashboard was created by Cursor as a demonstration tool to showcase SSE capabilities. The SSE implementation itself is client-agnostic and can be integrated with any front-end technology. I first thought of having only the back-end implemented, and a simple `.mjs` client. But a more visual feedback would be so very welcome that I asked my man Cursor to build it from scratch, with just some adjustments here and there when needed.
+> The React dashboard was created by Cursor as a demonstration tool to showcase SSE capabilities. The SSE implementation itself is client-agnostic and can be integrated with any front-end technology.
+>
+> I first thought of having only the back-end implemented, and a simple `.mjs` client. But a more visual feedback would be so very welcome that I asked my man Cursor to build it from scratch, with just some adjustments here and there when needed.
 
 ## Project Structure
 
