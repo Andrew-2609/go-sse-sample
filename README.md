@@ -1,6 +1,6 @@
 # Go SSE Sample with DDD
 
-A Go-based Server-Sent Events (SSE) sample application demonstrating Domain-Driven Design (DDD) architecture. This project provides a RESTful API for managing metrics and metric readings, with real-time event broadcasting through SSE.
+A Go-based Server-Sent Events (SSE) implementation demonstrating real-time event streaming with Domain-Driven Design (DDD) architecture. Uses a metrics domain as a sample use case to showcase SSE capabilities.
 
 ## Table of Contents
 
@@ -17,27 +17,30 @@ A Go-based Server-Sent Events (SSE) sample application demonstrating Domain-Driv
 
 ## Overview
 
-This application demonstrates how to build a scalable SSE-based event streaming system using Go and DDD principles. It manages metrics (e.g., temperature, CPU usage) and their readings, broadcasting events in real-time to connected clients when new metrics or readings are created.
+This application demonstrates how to build a scalable Server-Sent Events (SSE) system in Go using DDD principles. The core focus is on the SSE infrastructure: event broadcasting, client management, event replay, and connection handling.
+
+A metrics domain (metrics and readings) is used as a sample use case to demonstrate SSE functionality. The SSE implementation is domain-agnostic and can be adapted to any event-driven use case.
 
 ### Key Concepts
 
-- **Metrics**: Named entities that represent measurable quantities (e.g., "CPU Temperature", "Memory Usage")
-- **Metric Readings**: Time-series data points associated with a specific metric
-- **SSE Events**: Real-time notifications sent to connected clients when metrics or readings are created
+- **SSE Hub**: Manages client connections and broadcasts events to all connected clients
+- **Event Store**: Stores events for replay functionality with configurable retention
+- **Event Replay**: Clients can reconnect and receive missed events using `Last-Event-ID`
+- **Connection Management**: Handles client registration, unregistration, and slow client detection
 
 ## Architecture
 
-The project follows Domain-Driven Design (DDD) principles with a clean architecture approach:
+The project follows Domain-Driven Design (DDD) principles with a clean architecture approach. The SSE infrastructure (`pkg/sse/`) is the core component and is domain-agnostic:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                   Presentation Layer                     │
-│  (Controllers, DTOs) - HTTP handlers, request/response   │
+│  (Controllers, DTOs) - HTTP handlers, SSE endpoint      │
 └─────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────┐
 │                    Domain Layer                          │
-│  (Entities, Use Cases, Enums) - Business logic          │
+│  (Sample domain: Metrics) - Business logic              │
 └─────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────┐
@@ -46,30 +49,38 @@ The project follows Domain-Driven Design (DDD) principles with a clean architect
 └─────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────┐
-│                    Package Layer                         │
-│  (SSE Hub, Event Store) - Infrastructure                 │
+│                    Package Layer (Core)                  │
+│  (SSE Hub, Event Store) - SSE Infrastructure             │
+│  • Client connection management                          │
+│  • Event broadcasting                                    │
+│  • Event replay support                                  │
+│  • Thread-safe operations                                │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ### Layer Responsibilities
 
-- **Presentation Layer**: Handles HTTP requests/responses, validates input, converts between DTOs and domain entities
-- **Domain Layer**: Contains business logic, entities, and use cases
-- **Repository Layer**: Provides data persistence abstractions (currently in-memory implementations)
-- **Package Layer**: Infrastructure components (SSE hub, event store)
+- **Presentation Layer**: HTTP handlers, SSE endpoint (`/events/watch`), request/response handling
+- **Domain Layer**: Sample domain logic (metrics) that triggers SSE events
+- **Repository Layer**: Data persistence abstractions (currently in-memory)
+- **Package Layer (Core)**: SSE infrastructure - hub, event store, client management
 
 ## Features
 
-- ✅ RESTful API for metric management
-- ✅ RESTful API for metric reading creation
-- ✅ Real-time event streaming via Server-Sent Events (SSE)
-- ✅ Event replay support using `Last-Event-ID` header
-- ✅ Automatic event retention with configurable TTL
-- ✅ Client connection management with maximum limit (10,000 clients)
-- ✅ Graceful server shutdown
-- ✅ UUID v7 for time-ordered identifiers
-- ✅ Input validation and error handling
-- ✅ Thread-safe in-memory repositories
+### SSE Core Features
+
+- ✅ **Real-time event streaming** via Server-Sent Events (SSE)
+- ✅ **Event replay** support using `Last-Event-ID` header
+- ✅ **Automatic event retention** with configurable TTL
+- ✅ **Client connection management** with maximum limit (10,000 clients)
+- ✅ **Slow client detection** - automatically drops clients that can't keep up
+- ✅ **Thread-safe operations** for concurrent client handling
+- ✅ **Graceful server shutdown** with connection cleanup
+
+### Sample Domain (Metrics)
+
+- RESTful API for creating and retrieving metrics (demonstrates event triggering)
+- RESTful API for creating metric readings (demonstrates event broadcasting)
 
 ## Technology Stack
 
@@ -200,81 +211,92 @@ Press `Ctrl+C` to initiate graceful shutdown. The server will:
 
 ## API Examples
 
+### SSE Endpoint
+
+- `GET /events/watch` - SSE endpoint for real-time events
+  - Optional header: `Last-Event-ID` - Resume from a specific event ID
+
+### Sample Domain Endpoints (Metrics)
+
 For detailed API documentation and examples, see the `docs/api/` directory:
 
 - `docs/api/metrics_api_docs.http` - Metrics API examples
 - `docs/api/metric_readings_api_docs.http` - Metric readings API examples
 
-These HTTP files can be used with REST Client extensions (VS Code, IntelliJ) or tools like Postman, cURL, or HTTPie.
-
-### Available Endpoints
-
-- `POST /metrics` - Create a new metric
+These endpoints demonstrate how domain actions trigger SSE events:
+- `POST /metrics` - Create a metric (triggers `metric_created` event)
 - `GET /metrics/:id` - Get metric by ID
-- `POST /metrics/readings` - Create a metric reading
-- `GET /events/watch` - SSE endpoint for real-time events
+- `POST /metrics/readings` - Create a reading (triggers `metric_reading_created` event)
 
-A Node.js client example is available in `cmd/client/client.mjs`.
+A Node.js SSE client example is available in `cmd/client/client.mjs`.
 
-## SSE Events
+## SSE Implementation
 
-The application broadcasts real-time events via Server-Sent Events (SSE) when metrics or readings are created.
+### How It Works
 
-### Event Types
+1. **Client Connection**: Clients connect to `/events/watch` endpoint
+2. **Event Broadcasting**: When domain events occur, they're broadcast to all connected clients
+3. **Event Storage**: Events are stored in the event store for replay
+4. **Reconnection Support**: Clients can use `Last-Event-ID` header to receive missed events
 
-- **`metric_created`**: Emitted when a new metric is created
-- **`metric_reading_created`**: Emitted when a new metric reading is created
+### Event Flow
 
-### Key Features
+```
+Domain Action → Use Case → SSE Hub.Broadcast → Event Store
+                                          ↓
+                                    All Connected Clients
+```
 
-- **Event Replay**: Clients can reconnect using the `Last-Event-ID` header to receive missed events
-- **Event Retention**: Events are stored in memory with a configurable TTL (default: 1 minute)
-- **Connection Management**: Supports up to 10,000 concurrent SSE clients
+### Key Components
+
+- **SSE Hub** (`pkg/sse/sse_hub.go`): Manages client connections and broadcasting
+- **Event Store** (`pkg/sse/event_store.go`): Interface for event storage and replay
+- **SSE Client** (`pkg/sse/client.go`): Internal client representation
+
+### Event Replay
+
+Clients can reconnect using the `Last-Event-ID` header to receive events that occurred while disconnected. The event store maintains events for a configurable TTL (default: 1 minute).
+
+### Connection Management
+
+- Maximum 10,000 concurrent clients (configurable)
+- Oldest client disconnected when limit reached
+- Slow clients automatically dropped if they can't keep up with the event stream
+- Graceful connection cleanup on disconnect
 
 See `cmd/client/client.mjs` for a complete Node.js client example.
 
 ## Architecture Details
 
-### Domain Entities
+### SSE Hub (`pkg/sse/sse_hub.go`)
 
-#### Metric
-- **ID**: UUID v7 (time-ordered)
-- **Name**: String (required, non-empty)
-- **Validation**: ID must be UUID v7, name cannot be empty
+The core component that manages all SSE functionality:
 
-#### MetricReading
-- **ID**: UUID v7 (time-ordered)
-- **MetricID**: UUID v7 reference to Metric
-- **Value**: Float64 (must be > 0)
-- **Timestamp**: Time (UTC, defaults to current time if not provided)
-- **Validation**: All fields validated, UUIDs must be v7
+- **Client Registration**: Registers new SSE clients via `Register` channel
+- **Client Unregistration**: Removes disconnected clients via `Unregister` channel
+- **Event Broadcasting**: Receives events via `Broadcast` channel and sends to all clients
+- **Client Limit**: Maximum concurrent clients (default: 10,000) - oldest disconnected when limit reached
+- **Slow Client Handling**: Non-blocking sends - drops clients if their channel is full
+- **Thread-Safe**: Uses channels for safe concurrent operations
 
-### Use Cases
+### Event Store (`pkg/sse/event_store.go`)
 
-#### MetricUseCase
-- `CreateMetric`: Creates a new metric and broadcasts `metric_created` event
-- `GetMetricByID`: Retrieves a metric by ID
+Interface for event storage and replay:
 
-#### MetricReadingUseCase
-- `CreateMetricReading`: Creates a new reading, validates metric exists, and broadcasts `metric_reading_created` event
+- **StoreEvent**: Stores events for later replay
+- **GetEventsAfterID**: Retrieves events after a given ID for reconnection support
+- **TTL-based Retention**: Events automatically expire after TTL (default: 1 minute)
+- **Thread-Safe**: In-memory implementation uses mutexes for safe concurrent access
 
-### SSE Hub
+### Sample Domain (Metrics)
 
-The SSE Hub manages client connections and event broadcasting:
+The metrics domain is provided as a demonstration of how to integrate SSE with domain logic:
 
-- **Client Registration**: Registers new SSE clients
-- **Client Unregistration**: Removes disconnected clients
-- **Event Broadcasting**: Broadcasts events to all connected clients
-- **Client Limit**: Maximum 10,000 concurrent clients (oldest disconnected if limit reached)
-- **Slow Client Handling**: Drops clients that cannot keep up with event stream
+- **Entities**: `Metric` and `MetricReading` (sample domain entities)
+- **Use Cases**: Trigger SSE events when domain actions occur
+- **Controllers**: HTTP endpoints that trigger domain actions, which in turn broadcast SSE events
 
-### Event Store
-
-The in-memory event store:
-- Stores events for replay functionality
-- Implements TTL-based retention
-- Provides `GetEventsAfterID` for event replay
-- Thread-safe operations
+The SSE infrastructure is completely independent of the metrics domain and can be used with any domain.
 
 ## Configuration
 
