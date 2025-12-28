@@ -56,7 +56,7 @@ func (t *MockReadingsTicker) Start() {
 					}
 
 					if !lastReading.IsEmpty() && metric.InputFrequency > 0 {
-						timeSinceLastReading := time.Since(lastReading.Timestamp)
+						timeSinceLastReading := time.Since(lastReading.Timestamp.Truncate(time.Second))
 						if timeSinceLastReading < metric.InputFrequency {
 							continue
 						}
