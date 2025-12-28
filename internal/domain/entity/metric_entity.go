@@ -44,4 +44,5 @@ func (m *Metric) validate() error {
 type MetricRepository interface {
 	CreateMetric(metric Metric) (Metric, error)
 	GetMetricByID(id uuid.UUID) (Metric, error)
+	GetAllMetrics() ([]Metric, error)
 }

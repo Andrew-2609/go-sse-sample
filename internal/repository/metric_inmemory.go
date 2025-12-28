@@ -38,3 +38,13 @@ func (r *MetricInMemoryRepository) GetMetricByID(id uuid.UUID) (entity.Metric, e
 	}
 	return metric, nil
 }
+
+func (r *MetricInMemoryRepository) GetAllMetrics() ([]entity.Metric, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	metrics := make([]entity.Metric, 0, len(r.metrics))
+	for _, metric := range r.metrics {
+		metrics = append(metrics, metric)
+	}
+	return metrics, nil
+}

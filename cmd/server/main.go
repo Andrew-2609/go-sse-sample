@@ -4,12 +4,14 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/Andrew-2609/go-sse-sample/internal/domain/use_case"
+	"github.com/Andrew-2609/go-sse-sample/internal/infrastructure/metric_reading"
 	"github.com/Andrew-2609/go-sse-sample/internal/presentation/controller"
 	"github.com/Andrew-2609/go-sse-sample/internal/repository"
 	"github.com/Andrew-2609/go-sse-sample/pkg/sse"
@@ -94,6 +96,11 @@ func setupDependencies() {
 		metricReadingController = controller.NewMetricReadingController(metricReadingUseCase)
 
 		eventsController = controller.NewEventsController()
+
+		if os.Getenv("MOCK_READINGS_TICKER") == "true" {
+			mockReadingsTicker := metric_reading.NewMockReadingsTicker(metricRepository, metricReadingRepository, 5*time.Second)
+			mockReadingsTicker.Start()
+		}
 	})
 }
 

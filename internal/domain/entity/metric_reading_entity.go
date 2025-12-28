@@ -65,4 +65,5 @@ func (m *MetricReading) validate() error {
 
 type MetricReadingRepository interface {
 	CreateMetricReading(metricReading MetricReading) (MetricReading, error)
+	GetLastMetricReadingValue(metricID uuid.UUID) (float64, error)
 }
