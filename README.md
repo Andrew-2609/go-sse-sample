@@ -10,10 +10,9 @@ A Go-based Server-Sent Events (SSE) sample application demonstrating Domain-Driv
 - [Technology Stack](#technology-stack)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
-- [API Documentation](#api-documentation)
 - [SSE Events](#sse-events)
 - [Architecture Details](#architecture-details)
-- [Configuration](#configuration)
+- [API Examples](#api-examples)
 - [Development](#development)
 
 ## Overview
@@ -183,22 +182,13 @@ server started on port 8089
 
 ### Running the Example Client
 
-A Node.js example client is provided to demonstrate SSE connectivity. Make sure the server is running first.
+A Node.js example client is provided to demonstrate SSE connectivity. Make sure the server is running first:
 
-Using Make:
 ```bash
 make run-client
-```
-
-Or directly with Node.js:
-```bash
+# or
 node cmd/client/client.mjs
 ```
-
-The client will:
-- Connect to the SSE endpoint
-- Listen for `metric_created` and `metric_reading_created` events
-- Log events to the console as they are received
 
 ### Stopping the Server
 
@@ -208,257 +198,40 @@ Press `Ctrl+C` to initiate graceful shutdown. The server will:
 3. Wait up to 1 minute for existing connections to close
 4. Shut down gracefully
 
-## API Documentation
+## API Examples
 
-### Base URL
+For detailed API documentation and examples, see the `docs/api/` directory:
 
-```
-http://localhost:8089
-```
+- `docs/api/metrics_api_docs.http` - Metrics API examples
+- `docs/api/metric_readings_api_docs.http` - Metric readings API examples
 
-### Metrics API
+These HTTP files can be used with REST Client extensions (VS Code, IntelliJ) or tools like Postman, cURL, or HTTPie.
 
-#### Create Metric
+### Available Endpoints
 
-Creates a new metric with a unique identifier.
+- `POST /metrics` - Create a new metric
+- `GET /metrics/:id` - Get metric by ID
+- `POST /metrics/readings` - Create a metric reading
+- `GET /events/watch` - SSE endpoint for real-time events
 
-**Endpoint:** `POST /metrics`
-
-**Request Body:**
-```json
-{
-  "name": "CPU Temperature"
-}
-```
-
-**Response:** `201 Created`
-```json
-{
-  "id": "018f1234-5678-7890-abcd-ef1234567890",
-  "name": "CPU Temperature"
-}
-```
-
-**Validation:**
-- `name` is required and cannot be empty
-
-#### Get Metric by ID
-
-Retrieves a metric by its unique identifier.
-
-**Endpoint:** `GET /metrics/:id`
-
-**Path Parameters:**
-- `id`: UUID v7 of the metric
-
-**Response:** `200 OK`
-```json
-{
-  "id": "018f1234-5678-7890-abcd-ef1234567890",
-  "name": "CPU Temperature"
-}
-```
-
-**Error Responses:**
-- `400 Bad Request`: Invalid UUID format
-- `500 Internal Server Error`: Metric not found or server error
-
-### Metric Readings API
-
-#### Create Metric Reading
-
-Creates a new reading for an existing metric.
-
-**Endpoint:** `POST /metrics/readings`
-
-**Request Body:**
-```json
-{
-  "metric_id": "018f1234-5678-7890-abcd-ef1234567890",
-  "value": 45.5,
-  "timestamp": "2024-01-15T10:30:00Z"
-}
-```
-
-**Fields:**
-- `metric_id` (required): UUID v7 of the metric
-- `value` (required): Numeric value, must be greater than 0
-- `timestamp` (optional): RFC3339 formatted timestamp. If omitted, current UTC time is used
-
-**Response:** `201 Created`
-```json
-{
-  "id": "018f1234-5678-7890-abcd-ef1234567891",
-  "metric_id": "018f1234-5678-7890-abcd-ef1234567890",
-  "value": 45.5,
-  "timestamp": "2024-01-15T10:30:00Z"
-}
-```
-
-**Validation:**
-- `metric_id` must be a valid UUID v7
-- `value` must be greater than 0
-- `timestamp` must be in RFC3339 format if provided
-- The metric must exist
-
-**Error Responses:**
-- `400 Bad Request`: Invalid input (UUID, timestamp format, or value validation)
-- `500 Internal Server Error`: Metric not found or server error
-
-### Events API (SSE)
-
-#### Watch Events
-
-Establishes a Server-Sent Events connection to receive real-time notifications.
-
-**Endpoint:** `GET /events/watch`
-
-**Headers:**
-- `Last-Event-ID` (optional): Event ID to resume from. Events after this ID will be sent immediately upon connection.
-
-**Response:** `200 OK` (streaming)
-
-**Content-Type:** `text/event-stream`
-
-**Connection Behavior:**
-- Connection remains open until client disconnects
-- Automatic reconnection support via `Last-Event-ID` header
-- Connection messages are sent upon connect/disconnect
-
-**Example Event:**
-```json
-{
-  "id": "018f1234-5678-7890-abcd-ef1234567892",
-  "type": "metric_created",
-  "data": {
-    "id": "018f1234-5678-7890-abcd-ef1234567890",
-    "name": "CPU Temperature"
-  }
-}
-```
-
-**Client Example (Browser JavaScript):**
-```javascript
-const eventSource = new EventSource('http://localhost:8089/events/watch');
-
-eventSource.addEventListener('metric_created', (event) => {
-  const data = JSON.parse(event.data);
-  console.log('New metric created:', data);
-});
-
-eventSource.addEventListener('metric_reading_created', (event) => {
-  const data = JSON.parse(event.data);
-  console.log('New reading created:', data);
-});
-
-// Handle reconnection with Last-Event-ID
-eventSource.onerror = (error) => {
-  console.error('SSE error:', error);
-  // EventSource automatically handles reconnection
-};
-```
-
-**Client Example (Node.js):**
-
-A complete Node.js client example is available in `cmd/client/client.mjs`:
-
-```javascript
-import { EventSource } from "eventsource";
-
-const es = new EventSource("http://localhost:8089/events/watch");
-
-es.onmessage = (event) => {
-  switch (event.data) {
-    case "connected": {
-      console.log("SSE connected");
-      break;
-    }
-    case "disconnected": {
-      console.log("SSE disconnected");
-      es.close();
-      break;
-    }
-    default: {
-      console.log("Unexpected SSE message:", event.data);
-      break;
-    }
-  }
-};
-
-es.addEventListener("metric_created", (event) => {
-  const data = JSON.parse(event.data);
-  console.log("metric created:", data);
-});
-
-es.addEventListener("metric_reading_created", (event) => {
-  const data = JSON.parse(event.data);
-  console.log("metric reading created:", data);
-});
-
-es.onerror = (err) => {
-  console.error("SSE error:", err);
-};
-```
-
-Run it with:
-```bash
-make run-client
-# or
-node cmd/client/client.mjs
-```
-
-**Client Example (cURL):**
-```bash
-curl -N -H "Accept: text/event-stream" http://localhost:8089/events/watch
-```
+A Node.js client example is available in `cmd/client/client.mjs`.
 
 ## SSE Events
 
+The application broadcasts real-time events via Server-Sent Events (SSE) when metrics or readings are created.
+
 ### Event Types
 
-The application broadcasts two types of events:
+- **`metric_created`**: Emitted when a new metric is created
+- **`metric_reading_created`**: Emitted when a new metric reading is created
 
-1. **`metric_created`**: Emitted when a new metric is created
-   ```json
-   {
-     "id": "018f1234-5678-7890-abcd-ef1234567892",
-     "type": "metric_created",
-     "data": {
-       "id": "018f1234-5678-7890-abcd-ef1234567890",
-       "name": "CPU Temperature"
-     }
-   }
-   ```
+### Key Features
 
-2. **`metric_reading_created`**: Emitted when a new metric reading is created
-   ```json
-   {
-     "id": "018f1234-5678-7890-abcd-ef1234567893",
-     "type": "metric_reading_created",
-     "data": {
-       "id": "018f1234-5678-7890-abcd-ef1234567891",
-       "metric_id": "018f1234-5678-7890-abcd-ef1234567890",
-       "value": 45.5,
-       "timestamp": "2024-01-15T10:30:00Z"
-     }
-   }
-   ```
+- **Event Replay**: Clients can reconnect using the `Last-Event-ID` header to receive missed events
+- **Event Retention**: Events are stored in memory with a configurable TTL (default: 1 minute)
+- **Connection Management**: Supports up to 10,000 concurrent SSE clients
 
-### Event Replay
-
-When a client connects with the `Last-Event-ID` header, the server will:
-1. Retrieve all events stored after the specified event ID
-2. Send them immediately upon connection
-3. Continue streaming new events as they occur
-
-This enables clients to recover from disconnections without missing events.
-
-### Event Retention
-
-Events are stored in memory with a configurable TTL (Time To Live). By default:
-- TTL: 1 minute
-- Retention runs every 30 seconds (TTL/2)
-- Events older than TTL are automatically removed
+See `cmd/client/client.mjs` for a complete Node.js client example.
 
 ## Architecture Details
 
@@ -505,10 +278,7 @@ The in-memory event store:
 
 ## Configuration
 
-### Server Configuration
-
-Default configuration in `cmd/server/main.go`:
-
+Default configuration (in `cmd/server/main.go`):
 - **Port**: `8089`
 - **Max SSE Clients**: `10,000`
 - **Event TTL**: `1 minute`
@@ -516,71 +286,18 @@ Default configuration in `cmd/server/main.go`:
 
 To modify these values, edit the constants and variables in `main.go`.
 
-### Environment Variables
-
-Currently, the application uses hardcoded configuration. To make it configurable via environment variables, you can:
-
-1. Add environment variable parsing
-2. Use a configuration library (e.g., `viper`, `envconfig`)
-3. Provide default values
-
 ## Development
-
-### Project Dependencies
-
-**Server dependencies:**
-- `github.com/gin-gonic/gin`: Web framework
-- `github.com/google/uuid`: UUID generation
-
-**Client dependencies:**
-- `eventsource`: Node.js Server-Sent Events client library
-
-### Code Organization
-
-The project follows Go best practices:
-- Package naming conventions
-- Interface-based design for testability
-- Clear separation of concerns
-- Thread-safe implementations
-
-### Testing
-
-To add tests:
-1. Create test files with `_test.go` suffix
-2. Use Go's built-in testing package
-3. Mock repositories for unit testing
-4. Integration tests for API endpoints
 
 ### Building
 
-Build the application:
 ```bash
 go build -o bin/server cmd/server/main.go
-```
-
-Run the binary:
-```bash
 ./bin/server
 ```
 
-### API Testing
+### Testing
 
-Use the provided HTTP files in `docs/api/` with REST Client extensions (VS Code, IntelliJ) or tools like:
-- Postman
-- cURL
-- HTTPie
-
-Example using the provided HTTP files:
-```http
-@baseUrl = http://localhost:8089
-
-POST {{baseUrl}}/metrics
-Content-Type: application/json
-
-{
-    "name": "CPU Temperature"
-}
-```
+The project follows Go best practices with interface-based design for testability. Use the provided HTTP files in `docs/api/` for API testing with REST Client extensions or tools like Postman, cURL, or HTTPie.
 
 ## License
 
