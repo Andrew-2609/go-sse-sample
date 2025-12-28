@@ -270,14 +270,17 @@ See `cmd/client/client.mjs` for a complete Node.js client example.
 
 ### SSE Hub (`pkg/sse/sse_hub.go`)
 
-The core component that manages all SSE functionality:
+The core component that manages all SSE functionality. Implemented as a singleton pattern for global access:
 
+- **Singleton Pattern**: Initialized once with `InitializeSSEHub()` and accessed via `GetSSEHub()`
 - **Client Registration**: Registers new SSE clients via `Register` channel
 - **Client Unregistration**: Removes disconnected clients via `Unregister` channel
 - **Event Broadcasting**: Receives events via `Broadcast` channel and sends to all clients
 - **Client Limit**: Maximum concurrent clients (default: 10,000) - oldest disconnected when limit reached
 - **Slow Client Handling**: Non-blocking sends - drops clients if their channel is full
-- **Thread-Safe**: Uses channels for safe concurrent operations
+- **Thread-Safe**: Uses channels and `sync.Once` for safe concurrent operations
+
+**Initialization**: The SSE Hub is initialized during application startup in `main.go` with the event store and max clients configuration. Controllers and use cases access it via `sse.GetSSEHub()`.
 
 ### Event Store (`pkg/sse/event_store.go`)
 
@@ -305,6 +308,8 @@ Default configuration (in `cmd/server/main.go`):
 - **Max SSE Clients**: `10,000`
 - **Event TTL**: `1 minute`
 - **Graceful Shutdown Timeout**: `1 minute`
+
+**SSE Hub Initialization**: The SSE Hub singleton is initialized during application startup via `sse.InitializeSSEHub(eventStore, maxClients)`. It must be initialized before any components attempt to access it via `sse.GetSSEHub()`.
 
 To modify these values, edit the constants and variables in `main.go`.
 
