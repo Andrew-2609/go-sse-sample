@@ -164,7 +164,7 @@ go-sse-sample/
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone git@github.com:Andrew-2609/go-sse-sample.git
 cd go-sse-sample
 ```
 
