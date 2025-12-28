@@ -90,11 +90,14 @@ The project follows Domain-Driven Design (DDD) principles with a clean architect
 - **UUID**: v7 for time-ordered unique identifiers
 - **In-memory storage**: For metrics, readings, and events
 
-### Client (Demonstration Tool)
-- **React**: UI library for building the dashboard
+### Client (Optional Demonstration Tool)
+- **React**: UI library for the dashboard
 - **Vite**: Fast build tool and dev server
 - **Recharts**: Charting library for real-time data visualization
 - **EventSource API**: Browser API for SSE connections
+
+> [!note]
+> The React dashboard was created by Cursor as a demonstration tool to showcase SSE capabilities. The SSE implementation itself is client-agnostic and can be integrated with any front-end technology. I first thought of having only the back-end implemented, and a simple `.mjs` client. But a more visual feedback would be so very welcome that I asked my man Cursor to build it from scratch, with just some adjustments here and there when needed.
 
 ## Project Structure
 
@@ -157,7 +160,7 @@ go-sse-sample/
 ### Prerequisites
 
 - Go 1.23.5 or later
-- Node.js v22.2.0 or later (for running the React dashboard demonstration)
+- Node.js v22.2.0 or later (optional, for running the React dashboard)
 - Make (optional, for using Makefile commands)
 
 ### Installation
@@ -173,7 +176,7 @@ cd go-sse-sample
 go mod download
 ```
 
-3. Install React dashboard dependencies (optional, for running the demonstration dashboard):
+3. Install React dashboard dependencies (optional):
 ```bash
 cd cmd/client
 npm install
@@ -197,12 +200,7 @@ The server will start on port `8089`. You should see:
 server started on port 8089
 ```
 
-### Running the React Dashboard (Demonstration Tool)
-
-> [!note]
-> The React dashboard was created by Cursor as a demonstration tool to showcase SSE capabilities. The dashboard serves as a visual demonstration tool. The SSE implementation itself is client-agnostic and can be integrated with any front-end technology.
-> I first thought of having only the back-end implemented, and a simple `.mjs` client. But a more visual feedback would be so very welcome that I asked my man Cursor to build it from scratch, with just some adjustments here and there when needed.
-
+### Running the React Dashboard (Optional)
 
 ```bash
 make run-client
@@ -216,8 +214,6 @@ The dashboard will be available at `http://localhost:5173` (or the port shown in
 - Debug panel for troubleshooting
 - Automatic initial state loading on connection
 - Optimized rendering for high-frequency updates
-
-**Note**: The React dashboard is a demonstration tool to showcase SSE capabilities. The core SSE implementation is server-side and can be used with any client.
 
 ### Stopping the Server
 
@@ -246,8 +242,6 @@ These endpoints demonstrate how domain actions trigger SSE events:
 - `GET /metrics` - Get all metrics (with optional `?with_readings=true` parameter)
 - `GET /metrics/:id` - Get metric by ID
 - `POST /metrics/readings` - Create a reading (triggers `metric_reading_created` event)
-
-The React dashboard is available in `cmd/client/` to visually demonstrate SSE in action.
 
 ## SSE Implementation
 
@@ -284,8 +278,6 @@ Clients can reconnect using the `Last-Event-ID` header to receive events that oc
 - Oldest client disconnected when limit reached
 - Slow clients automatically dropped if they can't keep up with the event stream
 - Graceful connection cleanup on disconnect
-
-See `cmd/client/` for a complete React dashboard implementation demonstrating SSE connectivity.
 
 ## Architecture Details
 
