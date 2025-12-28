@@ -2,6 +2,6 @@ run-server:
 	go run cmd/server/main.go
 
 run-client:
-	node cmd/client/client.mjs
+	cd cmd/client && npm run dev
 
 .PHONY: run-server run-client
