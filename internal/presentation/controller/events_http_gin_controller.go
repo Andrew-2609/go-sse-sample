@@ -70,18 +70,16 @@ func (c *EventsController) WatchEvents(ctx *gin.Context) {
 	// any `return` triggers defer -> unregister client
 	for {
 		select {
-		case isDisconnected := <-client.IsDisconnected():
-			if isDisconnected {
-				connDuration := time.Since(connStartTime)
-				log.Printf("client disconnected after %d seconds", int(math.Ceil(connDuration.Seconds())))
+		case <-client.Disconnect():
+			connDuration := time.Since(connStartTime)
+			log.Printf("client disconnected after %d seconds", int(math.Ceil(connDuration.Seconds())))
 
-				if err := c.printDataMessage(ctx.Writer, "disconnected"); err != nil {
-					return
-				}
-
-				flusher.Flush()
+			if err := c.printDataMessage(ctx.Writer, "disconnected"); err != nil {
 				return
 			}
+
+			flusher.Flush()
+			return
 		case event := <-client.CH():
 			if err := c.sendEvents(ctx.Writer, event); err != nil {
 				return

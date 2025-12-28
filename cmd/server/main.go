@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	MAX_SSE_CLIENTS = 10_000
+	MAX_SSE_CLIENTS = 1
 )
 
 var (

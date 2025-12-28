@@ -53,7 +53,7 @@ func (h *SSEHub) run() {
 				h.order = h.order[1:]
 				delete(h.clients, oldestClient)
 				close(oldestClient.ch)
-				oldestClient.isDisconnected <- true
+				oldestClient.disconnectChan <- struct{}{}
 			}
 			h.clients[c] = struct{}{}
 			h.order = append(h.order, c)
@@ -61,7 +61,7 @@ func (h *SSEHub) run() {
 			if _, ok := h.clients[c]; ok {
 				delete(h.clients, c)
 				close(c.ch)
-				c.isDisconnected <- true
+				c.disconnectChan <- struct{}{}
 				for i, v := range h.order {
 					if v == c {
 						h.order = append(h.order[:i], h.order[i+1:]...)
@@ -78,7 +78,7 @@ func (h *SSEHub) run() {
 					// slow client -> drop it
 					delete(h.clients, c)
 					close(c.ch)
-					c.isDisconnected <- true
+					c.disconnectChan <- struct{}{}
 				}
 			}
 		}
