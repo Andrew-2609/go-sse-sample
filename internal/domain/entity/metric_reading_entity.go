@@ -70,4 +70,5 @@ func (m *MetricReading) IsEmpty() bool {
 type MetricReadingRepository interface {
 	CreateMetricReading(metricReading MetricReading) (MetricReading, error)
 	GetLastMetricReading(metricID uuid.UUID) (MetricReading, error)
+	GetAllReadingsByMetricID(metricID uuid.UUID) ([]MetricReading, error)
 }

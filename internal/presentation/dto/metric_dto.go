@@ -26,13 +26,20 @@ func NewCreateMetricResponseDTO(metric entity.Metric) CreateMetricResponseDTO {
 }
 
 type GetMetricByIDResponseDTO struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+	ID       string                         `json:"id"`
+	Name     string                         `json:"name"`
+	Readings *[]GetMetricReadingResponseDTO `json:"readings,omitempty"`
 }
 
-func NewGetMetricByIDResponseDTO(metric entity.Metric) GetMetricByIDResponseDTO {
+func NewGetMetricByIDResponseDTO(metric entity.Metric, readings []entity.MetricReading) GetMetricByIDResponseDTO {
+	readingsDTO := make([]GetMetricReadingResponseDTO, 0, len(readings))
+	for _, reading := range readings {
+		readingsDTO = append(readingsDTO, NewGetMetricReadingResponseDTO(reading))
+	}
+
 	return GetMetricByIDResponseDTO{
-		ID:   metric.ID.String(),
-		Name: metric.Name,
+		ID:       metric.ID.String(),
+		Name:     metric.Name,
+		Readings: &readingsDTO,
 	}
 }

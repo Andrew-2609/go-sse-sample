@@ -22,6 +22,7 @@ func NewMetricController(metricUseCase *use_case.MetricUseCase) *MetricControlle
 func (c *MetricController) SetupRoutes(metricsGroup *gin.RouterGroup) {
 	metricsGroup.POST("", c.CreateMetric)
 	metricsGroup.GET("/:id", c.GetMetricByID)
+	metricsGroup.GET("", c.GetAllMetrics)
 }
 
 func (c *MetricController) CreateMetric(ctx *gin.Context) {
@@ -57,4 +58,19 @@ func (c *MetricController) GetMetricByID(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *MetricController) GetAllMetrics(ctx *gin.Context) {
+	withReadings := ctx.Query("with_readings") == "true"
+
+	metrics, err := c.metricUseCase.GetAllMetrics(use_case.GetAllMetricsOptions{
+		WithReadings: withReadings,
+	})
+
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, metrics)
 }

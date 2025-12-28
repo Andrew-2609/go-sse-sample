@@ -11,14 +11,16 @@ import (
 )
 
 type MetricUseCase struct {
-	metricRepository entity.MetricRepository
-	sseHub           *sse.SSEHub
+	metricRepository        entity.MetricRepository
+	metricReadingRepository entity.MetricReadingRepository
+	sseHub                  *sse.SSEHub
 }
 
-func NewMetricUseCase(metricRepository entity.MetricRepository) *MetricUseCase {
+func NewMetricUseCase(metricRepository entity.MetricRepository, metricReadingRepository entity.MetricReadingRepository) *MetricUseCase {
 	return &MetricUseCase{
-		metricRepository: metricRepository,
-		sseHub:           sse.GetSSEHub(),
+		metricRepository:        metricRepository,
+		metricReadingRepository: metricReadingRepository,
+		sseHub:                  sse.GetSSEHub(),
 	}
 }
 
@@ -60,5 +62,33 @@ func (u *MetricUseCase) GetMetricByID(id uuid.UUID) (dto.GetMetricByIDResponseDT
 		return dto.GetMetricByIDResponseDTO{}, err
 	}
 
-	return dto.NewGetMetricByIDResponseDTO(metric), nil
+	return dto.NewGetMetricByIDResponseDTO(metric, nil), nil
+}
+
+type GetAllMetricsOptions struct {
+	WithReadings bool
+}
+
+func (u *MetricUseCase) GetAllMetrics(options GetAllMetricsOptions) ([]dto.GetMetricByIDResponseDTO, error) {
+	metrics, err := u.metricRepository.GetAllMetrics()
+	if err != nil {
+		return nil, err
+	}
+
+	response := make([]dto.GetMetricByIDResponseDTO, 0, len(metrics))
+	for _, metric := range metrics {
+		var readings []entity.MetricReading
+		var err error
+
+		if options.WithReadings {
+			readings, err = u.metricReadingRepository.GetAllReadingsByMetricID(metric.ID)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		response = append(response, dto.NewGetMetricByIDResponseDTO(metric, readings))
+	}
+
+	return response, nil
 }

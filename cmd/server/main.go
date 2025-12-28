@@ -80,10 +80,11 @@ func setupDependencies() {
 		sse.InitializeSSEHub(eventStore, MAX_SSE_CLIENTS)
 
 		metricRepository := repository.NewMetricInMemoryRepository()
-		metricUseCase := use_case.NewMetricUseCase(metricRepository)
+		metricReadingRepository := repository.NewMetricReadingInMemoryRepository()
+
+		metricUseCase := use_case.NewMetricUseCase(metricRepository, metricReadingRepository)
 		metricController = controller.NewMetricController(metricUseCase)
 
-		metricReadingRepository := repository.NewMetricReadingInMemoryRepository()
 		metricReadingUseCase := use_case.NewMetricReadingUseCase(metricRepository, metricReadingRepository)
 		metricReadingController = controller.NewMetricReadingController(metricReadingUseCase)
 

@@ -45,9 +45,29 @@ func (r *MetricReadingInMemoryRepository) GetLastMetricReading(metricID uuid.UUI
 		return entity.MetricReading{}, nil
 	}
 
+	// sort descending by timestamp
 	sort.Slice(metricReadings, func(i, j int) bool {
 		return metricReadings[i].Timestamp.After(metricReadings[j].Timestamp)
 	})
 
 	return metricReadings[0], nil
+}
+
+func (r *MetricReadingInMemoryRepository) GetAllReadingsByMetricID(metricID uuid.UUID) ([]entity.MetricReading, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	metricReadings := make([]entity.MetricReading, 0)
+	for _, metricReading := range r.metricReadings {
+		if metricReading.MetricID == metricID {
+			metricReadings = append(metricReadings, metricReading)
+		}
+	}
+
+	// sort ascending by timestamp
+	sort.Slice(metricReadings, func(i, j int) bool {
+		return metricReadings[i].Timestamp.Before(metricReadings[j].Timestamp)
+	})
+
+	return metricReadings, nil
 }

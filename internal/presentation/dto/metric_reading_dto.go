@@ -32,3 +32,19 @@ func NewCreateMetricReadingResponseDTO(metricReading entity.MetricReading) Creat
 		Timestamp: metricReading.Timestamp,
 	}
 }
+
+type GetMetricReadingResponseDTO struct {
+	ID        string    `json:"id"`
+	MetricID  string    `json:"metric_id"`
+	Value     float64   `json:"value"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+func NewGetMetricReadingResponseDTO(metricReading entity.MetricReading) GetMetricReadingResponseDTO {
+	return GetMetricReadingResponseDTO{
+		ID:        metricReading.ID.String(),
+		MetricID:  metricReading.MetricID.String(),
+		Value:     metricReading.Value,
+		Timestamp: metricReading.Timestamp,
+	}
+}
