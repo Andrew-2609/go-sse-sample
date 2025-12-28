@@ -360,6 +360,20 @@ go build -o bin/server cmd/server/main.go
 
 The project follows Go best practices with interface-based design for testability. Use the provided HTTP files in `docs/api/` for API testing with REST Client extensions or tools like Postman, cURL, or HTTPie.
 
+## Learning Journey
+
+This project was developed as a learning exercise, starting from basic concepts and progressing to more advanced implementations. The development conversation with ChatGPT documents part of the learning process, from initial simple questions to more complex architectural decisions:
+
+**[Development Conversation with ChatGPT](https://chatgpt.com/share/6950a4be-77e4-8003-9c73-a23b22038ae6)**
+
+This conversation may be helpful for understanding:
+- The learning progression from beginner to a little more advanced topics
+- Design decisions and their rationale
+- Problem-solving approaches throughout development
+- Final outcomes and implementation details
+
+Naturally, I didn't vibe-coded the backend lol. I also did some research on regular sources (e.g. StackOverflow), specially for GoLang-specific gotchas.
+
 ## License
 
 See [LICENSE](LICENSE) file for details.
