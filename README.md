@@ -10,7 +10,6 @@ A Go-based Server-Sent Events (SSE) implementation demonstrating real-time event
 - [Technology Stack](#technology-stack)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
-- [SSE Events](#sse-events)
 - [Architecture Details](#architecture-details)
 - [API Examples](#api-examples)
 - [Demonstration](#demonstration)
