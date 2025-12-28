@@ -248,6 +248,8 @@ A React dashboard is available in `cmd/client/` to visually demonstrate SSE in a
 
 ## SSE Implementation
 
+**Reference**: For a comprehensive guide on Server-Sent Events, see the [MDN documentation on Using server-sent events](https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events).
+
 ### How It Works
 
 1. **Client Connection**: Clients connect to `/events/watch` endpoint
