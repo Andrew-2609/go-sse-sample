@@ -342,7 +342,9 @@ A React dashboard is included to demonstrate the SSE system in action. The dashb
 - **Adaptive Animations**: Chart animations adjust based on metric input frequency
 - **Connection Monitoring**: Visual indicators for connection status and health
 
-**Video/GIF Demo**: _[Add video or GIF here demonstrating the system working]_
+**Video/GIF Demo**:
+
+https://github.com/user-attachments/assets/da8d5a7c-87ba-40ab-aab5-d23c8c35396a
 
 **Note**: The React dashboard was created by Auto (Cursor AI agent) as a demonstration tool to showcase SSE capabilities. The dashboard serves as a visual demonstration tool. The SSE implementation itself is client-agnostic and can be integrated with any front-end technology.
 
