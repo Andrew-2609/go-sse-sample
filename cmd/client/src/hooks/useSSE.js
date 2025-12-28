@@ -65,9 +65,18 @@ export function useSSE() {
             timestamp: new Date(reading.timestamp)
           }))
           
+          // Parse input_frequency from nanoseconds (Go time.Duration format)
+          // Go sends time.Duration as nanoseconds in JSON
+          const inputFrequencyMs = metric.input_frequency 
+            ? (typeof metric.input_frequency === 'number' 
+                ? metric.input_frequency / 1_000_000  // Convert nanoseconds to milliseconds
+                : 0)
+            : 0
+          
           initialMetrics.set(metric.id, {
             id: metric.id,
             name: metric.name,
+            inputFrequencyMs: inputFrequencyMs,
             readings: readings.sort((a, b) => a.timestamp - b.timestamp)
           })
         }
@@ -134,9 +143,17 @@ export function useSSE() {
             const newMap = new Map(prev)
             // Only add if it doesn't already exist (avoid duplicates from initial load)
             if (!newMap.has(data.id)) {
+              // Parse input_frequency from nanoseconds (Go time.Duration format)
+              const inputFrequencyMs = data.input_frequency 
+                ? (typeof data.input_frequency === 'number' 
+                    ? data.input_frequency / 1_000_000  // Convert nanoseconds to milliseconds
+                    : 0)
+                : 0
+              
               newMap.set(data.id, {
                 id: data.id,
                 name: data.name,
+                inputFrequencyMs: inputFrequencyMs,
                 readings: []
               })
             }

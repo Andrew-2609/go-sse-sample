@@ -32,6 +32,29 @@ const MetricCard = memo(function MetricCard({ metric }) {
     return metric.readings.slice(-5).reverse()
   }, [metric.readings])
 
+  // Calculate animation duration based on input frequency
+  // Faster updates = shorter animation, slower updates = longer animation
+  const animationDuration = useMemo(() => {
+    const inputFreqMs = metric.inputFrequencyMs || 0
+    
+    // If no input frequency, use default
+    if (inputFreqMs === 0) {
+      return 300
+    }
+    
+    // Animation duration should be a fraction of the update interval
+    // For very fast updates (< 1s): 150-200ms animation
+    // For medium updates (1-5s): 250-400ms animation  
+    // For slow updates (> 5s): 500-800ms animation
+    if (inputFreqMs < 1000) {
+      return Math.max(150, Math.min(200, inputFreqMs * 0.3))
+    } else if (inputFreqMs < 5000) {
+      return Math.max(250, Math.min(400, inputFreqMs * 0.15))
+    } else {
+      return Math.max(500, Math.min(800, inputFreqMs * 0.1))
+    }
+  }, [metric.inputFrequencyMs])
+
   return (
     <div className="metric-card">
       <div className="metric-card-header">
@@ -90,7 +113,7 @@ const MetricCard = memo(function MetricCard({ metric }) {
                 strokeWidth={2}
                 dot={false}
                 isAnimationActive={true}
-                animationDuration={300}
+                animationDuration={animationDuration}
                 activeDot={{ r: 4 }}
               />
             </LineChart>
@@ -122,9 +145,10 @@ const MetricCard = memo(function MetricCard({ metric }) {
 }, (prevProps, nextProps) => {
   // Return true if props are equal (skip re-render), false if different (re-render)
   
-  // Re-render if ID or name changed
+  // Re-render if ID, name, or input frequency changed
   if (prevProps.metric.id !== nextProps.metric.id || 
-      prevProps.metric.name !== nextProps.metric.name) {
+      prevProps.metric.name !== nextProps.metric.name ||
+      prevProps.metric.inputFrequencyMs !== nextProps.metric.inputFrequencyMs) {
     return false // Props changed, should re-render
   }
   
